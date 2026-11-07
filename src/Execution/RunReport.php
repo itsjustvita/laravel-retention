@@ -18,10 +18,12 @@ final readonly class RunReport
         public array $results,
         public bool $dryRun,
         public CarbonImmutable $evaluatedAt,
+        public int $purgedHolds = 0,
+        public int $purgedLogEntries = 0,
     ) {}
 
     /**
-     * @param  'due'|'deleted'|'anonymized'|'blocked'|'cancelled'|'skipped'  $field
+     * @param  'due'|'deleted'|'anonymized'|'blocked'|'onHold'|'cancelled'|'skipped'  $field
      */
     public function total(string $field): int
     {

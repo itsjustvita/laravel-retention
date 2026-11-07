@@ -6,7 +6,9 @@ namespace ItsJustVita\Retention\Tests\Fixtures\Models;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User;
 use ItsJustVita\Retention\Concerns\HasRetention;
 use ItsJustVita\Retention\RetentionPolicy;
 use LogicException;
@@ -44,6 +46,16 @@ class PolicyProbe extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class, 'customer_id');
+    }
+
+    /**
+     * A relation to a model without HasRetention.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'id');
     }
 
     public function notARelation(): string

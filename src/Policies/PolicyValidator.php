@@ -15,6 +15,9 @@ use ItsJustVita\Retention\Exceptions\MissingRetentionPolicy;
 use ItsJustVita\Retention\Exceptions\RetentionException;
 use ItsJustVita\Retention\Execution\StartColumn;
 use ItsJustVita\Retention\Execution\TemporalType;
+use ItsJustVita\Retention\Log\DeletionLog;
+use ItsJustVita\Retention\Models\RetentionHold;
+use ItsJustVita\Retention\Models\RetentionLog;
 use ItsJustVita\Retention\RetentionPolicy;
 use ItsJustVita\Retention\Rules\RetentionRule;
 use ItsJustVita\Retention\Rules\RuleCatalogue;
@@ -34,6 +37,7 @@ final readonly class PolicyValidator
         private PolicyRegistry $policies,
         private RuleCatalogue $rules,
         private StartColumn $startColumn,
+        private DeletionLog $log,
     ) {}
 
     /**
@@ -143,13 +147,71 @@ final readonly class PolicyValidator
             $violations[] = 'blockedBy() only applies to action delete; an anonymised record keeps its keys.';
         }
 
-        foreach (['blockedBy' => $policy->blockingRelations, 'inheritsHoldsFrom' => $policy->holdRelations] as $method => $relations) {
-            foreach ($relations as $relation) {
-                $violation = $this->relationViolation($model, $relation);
+        foreach ($policy->blockingRelations as $relation) {
+            $violation = $this->relationViolation($model, $relation);
 
-                if ($violation !== null) {
-                    $violations[] = "{$method}(): {$violation}";
-                }
+            if ($violation !== null) {
+                $violations[] = "blockedBy(): {$violation}";
+            }
+        }
+
+        foreach ($policy->holdRelations as $path) {
+            $violation = $this->holdPathViolation($model, $path);
+
+            if ($violation !== null) {
+                $violations[] = "inheritsHoldsFrom(): {$violation}";
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * Follows a (dotted) relation path; the model at its end must be able to
+     * carry legal holds.
+     */
+    private function holdPathViolation(Model $model, string $path): ?string
+    {
+        $current = $model;
+
+        foreach (explode('.', $path) as $segment) {
+            $violation = $this->relationViolation($current, $segment);
+
+            if ($violation !== null) {
+                return $violation;
+            }
+
+            $relation = $current->{$segment}();
+            $current = $relation instanceof Relation ? $relation->getRelated() : $current;
+        }
+
+        return $this->policies->has($current::class)
+            ? null
+            : "[{$path}] leads to [".$current::class.'], which does not use HasRetention and cannot carry legal holds.';
+    }
+
+    /**
+     * Checks that the package's own tables exist.
+     *
+     * @return list<string>
+     */
+    public function environmentViolations(): array
+    {
+        $tables = [(new RetentionHold)->getTable() => new RetentionHold];
+
+        if ($this->log->enabled()) {
+            $tables[(new RetentionLog)->getTable()] = new RetentionLog;
+        }
+
+        $violations = [];
+
+        if ($this->log->enabled() && ! $this->log->hasKey()) {
+            $violations[] = 'the deletion log needs a key to pseudonymise record IDs; set RETENTION_LOG_KEY (or APP_KEY), or disable the log with retention.log.enabled.';
+        }
+
+        foreach ($tables as $table => $model) {
+            if (! $model->getConnection()->getSchemaBuilder()->hasTable($table)) {
+                $violations[] = "table [{$table}] does not exist; publish and run the package migrations (php artisan vendor:publish --tag=retention-migrations && php artisan migrate).";
             }
         }
 

@@ -21,7 +21,7 @@ use ItsJustVita\Retention\Enums\StartEvent;
     startEvent: StartEvent::EndOfTransaction,
     action: Action::Delete,
     responsible: 'Accounting',
-    inheritsHoldsFrom: ['customer'],
+    inheritsHoldsFrom: ['customer', 'order'],
 )]
 class Invoice extends Model
 {

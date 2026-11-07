@@ -25,7 +25,7 @@ it('resolves a policy declared with the #[Retention] attribute', function () {
         ->and($policy->startColumn)->toBe('issued_at')
         ->and($policy->startEvent)->toBe(StartEvent::EndOfTransaction)
         ->and($policy->finalAction)->toBe(Action::Delete)
-        ->and($policy->holdRelations)->toBe(['customer'])
+        ->and($policy->holdRelations)->toBe(['customer', 'order'])
         ->and($policy->responsibleUnit)->toBe('Accounting');
 });
 

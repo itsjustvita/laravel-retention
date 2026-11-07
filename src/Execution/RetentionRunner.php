@@ -16,6 +16,8 @@ use ItsJustVita\Retention\Enums\ActionOutcome;
 use ItsJustVita\Retention\Enums\Trigger;
 use ItsJustVita\Retention\Events\RunCompleted;
 use ItsJustVita\Retention\Exceptions\InvalidRetentionPolicy;
+use ItsJustVita\Retention\Holds\LegalHolds;
+use ItsJustVita\Retention\Log\DeletionLog;
 use ItsJustVita\Retention\Policies\PolicyRegistry;
 use ItsJustVita\Retention\Policies\PolicyValidator;
 
@@ -33,6 +35,8 @@ final readonly class RetentionRunner
         private Dependencies $dependencies,
         private DueRecords $dueRecords,
         private ActionExecutor $executor,
+        private LegalHolds $holds,
+        private DeletionLog $log,
         private Dispatcher $events,
         private Repository $config,
     ) {}
@@ -56,7 +60,13 @@ final readonly class RetentionRunner
             $results[] = $dryRun ? $this->preview($model, $now) : $this->process($model, $now, $chunkSize);
         }
 
-        $report = new RunReport($results, $dryRun, $now);
+        $report = new RunReport(
+            results: $results,
+            dryRun: $dryRun,
+            evaluatedAt: $now,
+            purgedHolds: $dryRun ? 0 : $this->holds->purge($now),
+            purgedLogEntries: $dryRun || ! $this->log->enabled() ? 0 : $this->log->purge($now),
+        );
         $this->events->dispatch(new RunCompleted($report));
 
         return $report;
@@ -69,8 +79,8 @@ final readonly class RetentionRunner
      */
     public function validate(array $models): void
     {
-        $violations = [];
-        $invalid = [];
+        $violations = $this->validator->environmentViolations();
+        $invalid = $violations === [] ? [] : ['environment' => true];
 
         foreach ($models as $model) {
             foreach ($this->validator->violations($model) as $violation) {
@@ -105,19 +115,22 @@ final readonly class RetentionRunner
                         ActionOutcome::Deleted => $tally['deleted']++,
                         ActionOutcome::Anonymized => $tally['anonymized']++,
                         ActionOutcome::Cancelled => $tally['cancelled']++,
-                        // Became blocked or anonymised after the selection; still counted below.
-                        ActionOutcome::Blocked, ActionOutcome::AlreadyAnonymized => null,
+                        // Changed after the selection; blocked and held records are counted below.
+                        ActionOutcome::Blocked, ActionOutcome::OnHold, ActionOutcome::AlreadyAnonymized => null,
                     };
                 }
             });
         });
+
+        $remaining = $this->remaining($model, $now);
 
         return new ModelRunResult(
             model: $model,
             category: $this->policies->for($model)->category,
             deleted: $tally['deleted'],
             anonymized: $tally['anonymized'],
-            blocked: $this->blockedCount($model, $now),
+            blocked: $remaining['blocked'],
+            onHold: $remaining['onHold'],
             cancelled: $tally['cancelled'],
             skipped: $tally['skipped'],
         );
@@ -128,21 +141,32 @@ final readonly class RetentionRunner
      */
     private function preview(string $model, CarbonImmutable $now): ModelRunResult
     {
+        $remaining = $this->remaining($model, $now);
+
         return new ModelRunResult(
             model: $model,
             category: $this->policies->for($model)->category,
-            due: $this->dueRecords->query($model, $now)->count(),
-            blocked: $this->blockedCount($model, $now),
+            due: $remaining['due'],
+            blocked: $remaining['blocked'],
+            onHold: $remaining['onHold'],
         );
     }
 
     /**
+     * Splits the records whose period has expired into those that can be
+     * processed, those blocked by blockedBy() and those on legal hold (a held
+     * record counts as held, even if it is also blocked).
+     *
      * @param  class-string<Model>  $model
+     * @return array{due: int, blocked: int, onHold: int}
      */
-    private function blockedCount(string $model, CarbonImmutable $now): int
+    public function remaining(string $model, CarbonImmutable $now): array
     {
-        return $this->dueRecords->query($model, $now, excludeBlocked: false)->count()
-            - $this->dueRecords->query($model, $now)->count();
+        $expired = $this->dueRecords->query($model, $now, excludeBlocked: false, excludeHeld: false)->count();
+        $notHeld = $this->dueRecords->query($model, $now, excludeBlocked: false)->count();
+        $due = $this->dueRecords->query($model, $now)->count();
+
+        return ['due' => $due, 'blocked' => $notHeld - $due, 'onHold' => $expired - $notHeld];
     }
 
     private function defaultChunkSize(): int

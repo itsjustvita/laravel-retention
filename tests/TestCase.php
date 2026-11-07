@@ -19,8 +19,17 @@ abstract class TestCase extends Orchestra
         return [RetentionServiceProvider::class];
     }
 
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('t', 32)));
+    }
+
     protected function defineDatabaseMigrations(): void
     {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadMigrationsFrom(__DIR__.'/Fixtures/migrations');
     }
 }

@@ -22,7 +22,7 @@ beforeEach(function () {
     ]);
 });
 
-const RUN_HEADERS = ['Category', 'Model', 'Deleted', 'Anonymised', 'Blocked', 'Skipped'];
+const RUN_HEADERS = ['Category', 'Model', 'Deleted', 'Anonymised', 'Blocked', 'On hold', 'Skipped'];
 
 it('deletes and anonymises the due records and leaves the rest alone', function () {
     $this->travelTo(at('2020-06-01 10:00'));
@@ -37,10 +37,10 @@ it('deletes and anonymises the due records and leaves the rest alone', function 
 
     $this->artisan('retention:run')
         ->expectsTable(RUN_HEADERS, [
-            ['customer_master_data', Customer::class, '0', '1', '0', '0'],
-            ['invoices', Invoice::class, '1', '0', '0', '0'],
-            ['orders', Order::class, '0', '0', '0', '0'],
-            ['server_logs', ServerLog::class, '1', '0', '0', '0'],
+            ['customer_master_data', Customer::class, '0', '1', '0', '0', '0'],
+            ['invoices', Invoice::class, '1', '0', '0', '0', '0'],
+            ['orders', Order::class, '0', '0', '0', '0', '0'],
+            ['server_logs', ServerLog::class, '1', '0', '0', '0', '0'],
         ])
         ->assertSuccessful();
 
@@ -59,8 +59,8 @@ it('processes children before their parents in the same run', function () {
     $this->travelTo(at('2026-01-01'));
     $this->artisan('retention:run', ['--model' => ['Order', 'Invoice']])
         ->expectsTable(RUN_HEADERS, [
-            ['invoices', Invoice::class, '0', '0', '0', '0'],
-            ['orders', Order::class, '0', '0', '1', '0'],
+            ['invoices', Invoice::class, '0', '0', '0', '0', '0'],
+            ['orders', Order::class, '0', '0', '1', '0', '0'],
         ])
         ->assertSuccessful();
 
@@ -69,8 +69,8 @@ it('processes children before their parents in the same run', function () {
     $this->travelTo(at('2029-01-01'));
     $this->artisan('retention:run', ['--model' => ['Order', 'Invoice']])
         ->expectsTable(RUN_HEADERS, [
-            ['invoices', Invoice::class, '1', '0', '0', '0'],
-            ['orders', Order::class, '1', '0', '0', '0'],
+            ['invoices', Invoice::class, '1', '0', '0', '0', '0'],
+            ['orders', Order::class, '1', '0', '0', '0', '0'],
         ])
         ->assertSuccessful();
 
@@ -85,7 +85,7 @@ it('anonymises a record only once across runs', function () {
     $this->artisan('retention:run', ['--model' => [Customer::class]])->assertSuccessful();
 
     $this->artisan('retention:run', ['--model' => [Customer::class]])
-        ->expectsTable(RUN_HEADERS, [['customer_master_data', Customer::class, '0', '0', '0', '0']])
+        ->expectsTable(RUN_HEADERS, [['customer_master_data', Customer::class, '0', '0', '0', '0', '0']])
         ->assertSuccessful();
 });
 
@@ -97,7 +97,7 @@ it('processes all records across chunks', function () {
 
     $this->travelTo(at('2025-02-01'));
     $this->artisan('retention:run', ['--model' => ['ServerLog'], '--chunk' => 2])
-        ->expectsTable(RUN_HEADERS, [['server_logs', ServerLog::class, '7', '0', '0', '0']])
+        ->expectsTable(RUN_HEADERS, [['server_logs', ServerLog::class, '7', '0', '0', '0', '0']])
         ->assertSuccessful();
 
     expect(DB::table('server_logs')->count())->toBe(0);
@@ -112,11 +112,11 @@ it('changes nothing in a dry run', function () {
 
     $this->artisan('retention:run', ['--dry-run' => true])
         ->expectsOutputToContain('Dry run')
-        ->expectsTable(['Category', 'Model', 'Due', 'Blocked'], [
-            ['customer_master_data', Customer::class, '1', '0'],
-            ['invoices', Invoice::class, '0', '0'],
-            ['orders', Order::class, '0', '1'],
-            ['server_logs', ServerLog::class, '0', '0'],
+        ->expectsTable(['Category', 'Model', 'Due', 'Blocked', 'On hold'], [
+            ['customer_master_data', Customer::class, '1', '0', '0'],
+            ['invoices', Invoice::class, '0', '0', '0'],
+            ['orders', Order::class, '0', '1', '0'],
+            ['server_logs', ServerLog::class, '0', '0', '0'],
         ])
         ->assertSuccessful();
 
@@ -164,7 +164,7 @@ it('skips records that the SQL selection returned but the calculator does not co
 
     $this->artisan('retention:run', ['--model' => [Customer::class]])
         ->expectsOutputToContain('1 record(s) were selected as due but failed the per-record check')
-        ->expectsTable(RUN_HEADERS, [['customer_master_data', Customer::class, '0', '0', '0', '1']])
+        ->expectsTable(RUN_HEADERS, [['customer_master_data', Customer::class, '0', '0', '0', '0', '1']])
         ->assertSuccessful();
 
     expect(DB::table('customers')->whereNull('anonymized_at')->count())->toBe(1);

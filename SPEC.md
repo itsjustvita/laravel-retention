@@ -254,9 +254,9 @@ Polymorphic table `retention_holds` (holdable_type, holdable_id, reason, until n
 
 API: `$invoice->placeHold('Tax audit 2026', until: ...)`, `->releaseHold()`, `->isOnHold()`.
 
-A policy can inherit holds through a relation: with `->inheritsHoldsFrom('customer')`, a hold on a customer also protects their invoices without one hold per invoice. `isOnHold()` and the due-record query both take inherited holds into account (`whereDoesntHave` on the relation's active holds).
+A policy can inherit holds through a relation: with `->inheritsHoldsFrom('customer')`, a hold on a customer also protects their invoices without one hold per invoice. Dotted paths (`'order.customer'`) are allowed; inheritance is not transitive. Inherited holds are looked up across all global scopes, so a restricted or soft-deleted customer still protects its invoices. `isOnHold()`, the due-record query and `ActionExecutor` (outcome `on_hold`) all use the same SQL condition. The relation on the model is `retentionHolds()`; `until` is an exclusive end instant; `created_by` defaults to the authenticated user's ID.
 
-Holds contain personal data of employees (`created_by`, possibly `reason`). Released and expired holds are purged after `holds_retention` (default 3 years, configurable) by `retention:run`.
+Holds contain personal data of employees (`created_by`, possibly `reason`). Released and expired holds are purged after `retention.holds.retention` (default `P3Y`) by `retention:run`. The migrations are published with `vendor:publish --tag=retention-migrations` (use `uuidMorphs()` for UUID keys).
 
 ## Execution
 
@@ -303,7 +303,7 @@ Table `retention_log` as evidence under the accountability principle, Art. 5 (2)
 
 The hashed ID is an HMAC with a dedicated key (`RETENTION_LOG_KEY`, falling back to `APP_KEY`). A separate key means rotating `APP_KEY` does not break verification; `key_id` records which key produced each hash, so the log key itself can be rotated. `RetentionLog::verify(Invoice::class, 4711)` finds the entries for a specific record when its ID is known from elsewhere (e.g. the data subject's customer number), but the hash cannot be reversed.
 
-Because the controller holds the key, the hashed IDs are pseudonymised, not anonymous, and remain personal data (Recital 26 GDPR). The document says so. The log therefore has its own retention rule (default 3 years, configurable). Can be disabled, enabled by default.
+Because the controller holds the key, the hashed IDs are pseudonymised, not anonymous, and remain personal data (Recital 26 GDPR). The document says so. The log therefore has its own retention period (`retention.log.retention`, default `P3Y`), purged by `retention:run`. Rotated keys go into `retention.log.previous_keys` so older entries stay verifiable. Entries are written synchronously by a listener on `RecordDeleted`, `RecordAnonymized` and `RecordRestricted`, inside the transaction of the action. Validation fails before any change if the log is enabled but no key is configured, or if the package tables are missing. Can be disabled (`retention.log.enabled`), enabled by default.
 
 ## Generated deletion concept
 

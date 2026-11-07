@@ -53,16 +53,25 @@ final class RunCommand extends Command
     private function renderRun(RunReport $report): void
     {
         $this->table(
-            ['Category', 'Model', 'Deleted', 'Anonymised', 'Blocked', 'Skipped'],
+            ['Category', 'Model', 'Deleted', 'Anonymised', 'Blocked', 'On hold', 'Skipped'],
             array_map(fn (ModelRunResult $result): array => [
                 $result->category,
                 $result->model,
                 (string) $result->deleted,
                 (string) $result->anonymized,
                 (string) $result->blocked,
+                (string) $result->onHold,
                 (string) ($result->skipped + $result->cancelled),
             ], $report->results),
         );
+
+        if ($report->purgedHolds > 0) {
+            $this->components->info("Purged {$report->purgedHolds} released or expired legal hold(s).");
+        }
+
+        if ($report->purgedLogEntries > 0) {
+            $this->components->info("Purged {$report->purgedLogEntries} log entry/entries older than the log retention period.");
+        }
 
         if ($report->total('skipped') > 0) {
             $this->components->warn($report->total('skipped').' record(s) were selected as due but failed the per-record check and were left untouched. Please report this as a bug.');
@@ -78,12 +87,13 @@ final class RunCommand extends Command
         $this->components->info('Dry run: nothing was changed. Records shown as blocked wait for their blockedBy() relations.');
 
         $this->table(
-            ['Category', 'Model', 'Due', 'Blocked'],
+            ['Category', 'Model', 'Due', 'Blocked', 'On hold'],
             array_map(fn (ModelRunResult $result): array => [
                 $result->category,
                 $result->model,
                 (string) $result->due,
                 (string) $result->blocked,
+                (string) $result->onHold,
             ], $report->results),
         );
     }

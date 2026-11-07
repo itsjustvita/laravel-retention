@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ItsJustVita\Retention;
 
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
@@ -12,7 +13,12 @@ use ItsJustVita\Retention\Calculation\RetentionCalculator;
 use ItsJustVita\Retention\Console\DueCommand;
 use ItsJustVita\Retention\Console\RunCommand;
 use ItsJustVita\Retention\Database\RetentionColumns;
+use ItsJustVita\Retention\Events\RecordAnonymized;
+use ItsJustVita\Retention\Events\RecordDeleted;
+use ItsJustVita\Retention\Events\RecordRestricted;
 use ItsJustVita\Retention\Execution\StartColumn;
+use ItsJustVita\Retention\Log\LogHasher;
+use ItsJustVita\Retention\Log\WriteRetentionLog;
 use ItsJustVita\Retention\Policies\PolicyRegistry;
 use ItsJustVita\Retention\Policies\PolicyValidator;
 use ItsJustVita\Retention\Rules\RuleCatalogue;
@@ -52,16 +58,26 @@ class RetentionServiceProvider extends ServiceProvider
         $this->app->singleton(PolicyRegistry::class);
         $this->app->singleton(PolicyValidator::class);
         $this->app->singleton(StartColumn::class);
+        $this->app->singleton(LogHasher::class);
     }
 
     public function boot(): void
     {
         RetentionColumns::registerMacros();
 
+        $this->app->make(Dispatcher::class)->listen(
+            [RecordDeleted::class, RecordAnonymized::class, RecordRestricted::class],
+            WriteRetentionLog::class,
+        );
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/retention.php' => config_path('retention.php'),
             ], 'retention-config');
+
+            $this->publishesMigrations([
+                __DIR__.'/../database/migrations' => database_path('migrations'),
+            ], 'retention-migrations');
 
             $this->commands([
                 RunCommand::class,

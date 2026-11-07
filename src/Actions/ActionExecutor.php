@@ -16,21 +16,23 @@ use ItsJustVita\Retention\Enums\Trigger;
 use ItsJustVita\Retention\Events\RecordAnonymized;
 use ItsJustVita\Retention\Events\RecordDeleted;
 use ItsJustVita\Retention\Exceptions\InvalidRetentionPolicy;
+use ItsJustVita\Retention\Holds\LegalHolds;
 use ItsJustVita\Retention\Policies\PolicyRegistry;
 use ItsJustVita\Retention\RetentionPolicy;
 
 /**
  * Applies a record's final action (delete or anonymize) right away.
  *
- * Callers decide when a record is due and wrap the work in a transaction;
- * the executor only refuses to delete records whose blockedBy() relations
- * still hold records, and never anonymises a record twice.
+ * Callers decide when a record is due and wrap the work in a transaction.
+ * The executor still refuses records on legal hold and deletions blocked by
+ * blockedBy() relations, and never anonymises a record twice.
  */
 final readonly class ActionExecutor
 {
     public function __construct(
         private PolicyRegistry $policies,
         private Dependencies $dependencies,
+        private LegalHolds $holds,
         private Dispatcher $events,
         private Container $container,
     ) {}
@@ -38,6 +40,10 @@ final readonly class ActionExecutor
     public function apply(Model $record, Trigger $trigger): ActionOutcome
     {
         $policy = $this->policies->for($record::class);
+
+        if ($this->holds->isHeld($record)) {
+            return ActionOutcome::OnHold;
+        }
 
         return match ($policy->finalAction) {
             Action::Delete => $this->delete($record, $policy, $trigger),

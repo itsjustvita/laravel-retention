@@ -127,6 +127,16 @@ it('reports invalid policies', function (Closure $adjust, string $table, string 
         'customers',
         'inheritsHoldsFrom(): relation [account] does not exist on the model.',
     ],
+    'inheritsHoldsFrom() leading to a model without HasRetention' => [
+        fn (RetentionPolicy $p) => $p->inheritsHoldsFrom('owner'),
+        'customers',
+        'inheritsHoldsFrom(): [owner] leads to [Illuminate\\Foundation\\Auth\\User], which does not use HasRetention and cannot carry legal holds.',
+    ],
+    'unknown nested relation in inheritsHoldsFrom()' => [
+        fn (RetentionPolicy $p) => $p->inheritsHoldsFrom('invoices.payments'),
+        'customers',
+        'inheritsHoldsFrom(): relation [payments] does not exist on the model.',
+    ],
     'missing table' => [
         fn (RetentionPolicy $p) => $p,
         'no_such_table',

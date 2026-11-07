@@ -21,4 +21,7 @@ enum ActionOutcome: string
 
     /** A model event listener cancelled the deletion. */
     case Cancelled = 'cancelled';
+
+    /** The record is on legal hold, itself or through an inherited hold; nothing was changed. */
+    case OnHold = 'on_hold';
 }

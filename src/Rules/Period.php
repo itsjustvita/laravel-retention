@@ -55,16 +55,16 @@ final readonly class Period
     }
 
     /**
-     * Adds a date-based period. A month-end day that does not exist in the
-     * target month falls back to the last day of that month (§ 188 (3) BGB).
+     * Adds the period. A month-end day that does not exist in the target
+     * month falls back to the last day of that month (§ 188 (3) BGB).
      */
     public function addTo(CarbonImmutable $date): CarbonImmutable
     {
-        return $date->addMonthsNoOverflow($this->months)->addDays($this->days);
+        return $date->addMonthsNoOverflow($this->months)->addDays($this->days)->addSeconds($this->seconds);
     }
 
     public function subtractFrom(CarbonImmutable $date): CarbonImmutable
     {
-        return $date->subMonthsNoOverflow($this->months)->subDays($this->days);
+        return $date->subMonthsNoOverflow($this->months)->subDays($this->days)->subSeconds($this->seconds);
     }
 }

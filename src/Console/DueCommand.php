@@ -50,17 +50,19 @@ final class DueCommand extends Command
         $horizon = $now->addDays($days);
 
         $this->table(
-            ['Category', 'Model', 'Due now', 'Blocked', "Due within {$days} days", 'Restricted'],
-            array_map(function (string $model) use ($dueRecords, $policies, $now, $horizon): array {
-                $dueNow = $dueRecords->query($model, $now)->count();
-                $dueNowIncludingBlocked = $dueRecords->query($model, $now, excludeBlocked: false)->count();
+            ['Category', 'Model', 'Due now', 'Blocked', 'On hold', "Due within {$days} days", 'Restricted'],
+            array_map(function (string $model) use ($runner, $dueRecords, $policies, $now, $horizon): array {
+                $remaining = $runner->remaining($model, $now);
+                $expired = $remaining['due'] + $remaining['blocked'] + $remaining['onHold'];
+                $expiredByHorizon = $dueRecords->query($model, $horizon, excludeBlocked: false, excludeHeld: false)->count();
 
                 return [
                     $policies->for($model)->category,
                     $model,
-                    (string) $dueNow,
-                    (string) ($dueNowIncludingBlocked - $dueNow),
-                    (string) ($dueRecords->query($model, $horizon, excludeBlocked: false)->count() - $dueNowIncludingBlocked),
+                    (string) $remaining['due'],
+                    (string) $remaining['blocked'],
+                    (string) $remaining['onHold'],
+                    (string) ($expiredByHorizon - $expired),
                     $this->restrictedCount($model),
                 ];
             }, $models),

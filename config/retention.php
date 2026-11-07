@@ -48,6 +48,41 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Legal holds
+    |--------------------------------------------------------------------------
+    |
+    | Holds name the person who placed them, so released and expired holds
+    | are deleted by retention:run once this period (ISO 8601) has passed.
+    |
+    */
+
+    'holds' => [
+        'retention' => 'P3Y',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Deletion log
+    |--------------------------------------------------------------------------
+    |
+    | Every deletion, anonymisation and restriction is logged as evidence
+    | under Art. 5 (2) GDPR. Record IDs are stored only as an HMAC, keyed
+    | with RETENTION_LOG_KEY (falls back to APP_KEY, which then must never
+    | change). After rotating the key, list the old one under
+    | previous_keys so older entries stay verifiable. Entries are deleted
+    | by retention:run once `retention` (ISO 8601) has passed.
+    |
+    */
+
+    'log' => [
+        'enabled' => env('RETENTION_LOG_ENABLED', true),
+        'key' => env('RETENTION_LOG_KEY'),
+        'previous_keys' => [],
+        'retention' => 'P3Y',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Rule catalogue
     |--------------------------------------------------------------------------
     |

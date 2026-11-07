@@ -13,6 +13,7 @@ use ItsJustVita\Retention\Calculation\RetentionCalculator;
 use ItsJustVita\Retention\Database\RetentionColumns;
 use ItsJustVita\Retention\Enums\Action;
 use ItsJustVita\Retention\Exceptions\InvalidRetentionPolicy;
+use ItsJustVita\Retention\Holds\LegalHolds;
 use ItsJustVita\Retention\Policies\PolicyRegistry;
 use ItsJustVita\Retention\RetentionPolicy;
 use ItsJustVita\Retention\Rules\RetentionRule;
@@ -23,7 +24,8 @@ use ItsJustVita\Retention\Rules\RuleCatalogue;
  *
  * Retention applies to every row of a table, so the selection ignores all
  * global scopes: restricted, soft-deleted and otherwise scoped-out records
- * are included. Records that are already anonymised are excluded.
+ * are included. Records that are already anonymised are excluded, as are, by
+ * default, records blocked by blockedBy() and records on legal hold.
  */
 readonly class DueRecords
 {
@@ -32,6 +34,7 @@ readonly class DueRecords
         private RuleCatalogue $rules,
         private RetentionCalculator $calculator,
         private Dependencies $dependencies,
+        private LegalHolds $holds,
         private StartColumn $startColumn,
     ) {}
 
@@ -39,7 +42,7 @@ readonly class DueRecords
      * @param  class-string<Model>  $model
      * @return Builder<Model>
      */
-    public function query(string $model, CarbonInterface $now, bool $excludeBlocked = true): Builder
+    public function query(string $model, CarbonInterface $now, bool $excludeBlocked = true, bool $excludeHeld = true): Builder
     {
         $policy = $this->policies->for($model);
         $instance = new $model;
@@ -60,6 +63,10 @@ readonly class DueRecords
 
         if ($excludeBlocked) {
             $this->dependencies->excludeBlocked($query, $policy);
+        }
+
+        if ($excludeHeld) {
+            $this->holds->whereHeld($query, $policy, $now, held: false);
         }
 
         return $query;

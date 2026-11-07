@@ -26,19 +26,19 @@ beforeEach(function () {
 
 it('shows due, blocked, upcoming and restricted records per model', function () {
     $this->artisan('retention:due')
-        ->expectsTable(['Category', 'Model', 'Due now', 'Blocked', 'Due within 30 days', 'Restricted'], [
-            ['customer_master_data', Customer::class, '1', '0', '1', '0'],
-            ['invoices', Invoice::class, '0', '0', '0', '1'],
-            ['orders', Order::class, '0', '1', '0', '0'],
-            ['server_logs', ServerLog::class, '0', '0', '0', '–'],
+        ->expectsTable(['Category', 'Model', 'Due now', 'Blocked', 'On hold', 'Due within 30 days', 'Restricted'], [
+            ['customer_master_data', Customer::class, '1', '0', '0', '1', '0'],
+            ['invoices', Invoice::class, '0', '0', '0', '0', '1'],
+            ['orders', Order::class, '0', '1', '0', '0', '0'],
+            ['server_logs', ServerLog::class, '0', '0', '0', '0', '–'],
         ])
         ->assertSuccessful();
 });
 
 it('uses the given forecast horizon', function () {
     $this->artisan('retention:due', ['--days' => 10, '--model' => ['Customer']])
-        ->expectsTable(['Category', 'Model', 'Due now', 'Blocked', 'Due within 10 days', 'Restricted'], [
-            ['customer_master_data', Customer::class, '1', '0', '0', '0'],
+        ->expectsTable(['Category', 'Model', 'Due now', 'Blocked', 'On hold', 'Due within 10 days', 'Restricted'], [
+            ['customer_master_data', Customer::class, '1', '0', '0', '0', '0'],
         ])
         ->assertSuccessful();
 });
