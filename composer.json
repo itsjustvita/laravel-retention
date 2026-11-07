@@ -1,0 +1,67 @@
+{
+    "name": "itsjustvita/laravel-retention",
+    "description": "Declare data retention rules on Eloquent models, enforce them automatically and generate a DIN 66398 deletion concept (Löschkonzept) from the same declarations.",
+    "keywords": [
+        "laravel",
+        "gdpr",
+        "dsgvo",
+        "retention",
+        "data-retention",
+        "deletion-concept",
+        "loeschkonzept",
+        "din-66398"
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/itsjustvita/laravel-retention",
+    "authors": [
+        {
+            "name": "Vitalis Feist-Wurm",
+            "email": "hello@itsjustvita.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "illuminate/console": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.0",
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^5.0",
+        "pestphp/pest-plugin-laravel": "^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ItsJustVita\\Retention\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ItsJustVita\\Retention\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "analyse": "vendor/bin/phpstan analyse",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ItsJustVita\\Retention\\RetentionServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

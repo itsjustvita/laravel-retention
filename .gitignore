@@ -1,0 +1,8 @@
+/vendor
+/build
+/coverage
+/.phpunit.cache
+/.idea
+composer.lock
+.phpunit.result.cache
+.DS_Store
