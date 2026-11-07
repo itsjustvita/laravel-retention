@@ -5,6 +5,14 @@ Declare retention and deletion rules directly on your Eloquent models. The packa
 > [!CAUTION]
 > **This package is not legal advice.** The shipped rule catalogue, the generated document and the reply texts for data subjects are starting points. They may be incomplete, outdated or wrong for your organisation. The controller has to review every rule and text with a data protection officer or a lawyer before relying on them. Deleting data is irreversible, and keeping it too long is a compliance risk, so try `retention:run --dry-run` first. The software is provided "as is", without warranty of any kind and without liability for damages; see the [license](LICENSE.md).
 
+> [!IMPORTANT]
+> **Early release (0.x).** The legal content has not been reviewed by a data protection officer or a lawyer yet, so the shipped rules carry no `as_of` date, and the API may change before 1.0. Known open points:
+>
+> - DIN 66398 has been replaced by DIN EN ISO/IEC 27555:2025-09. The generated document still refers to DIN 66398 and has not been compared with the new standard.
+> - The `ao_*` rules cite § 35 (3) BDSG, although its wording only covers retention periods from statutes of an organisation or from contracts, not statutory ones.
+> - `rejected_application`, `server_logs` and `consent_proof` are recommendations without a statutory period.
+> - The automatic deletion cannot detect an open tax assessment (§ 147 (3) AO); see [How periods are counted](#rule-catalogue).
+
 Unlike generic retention packages, it knows:
 
 - German statutory retention periods (AO, HGB, UStG, BGB limitation periods) and that they start at the end of the calendar year,
