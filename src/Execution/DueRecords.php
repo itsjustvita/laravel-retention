@@ -50,12 +50,13 @@ readonly class DueRecords
 
         $query = $instance->newQueryWithoutScopes()->whereNotNull($instance->qualifyColumn($column));
 
-        $this->startColumn->constrain(
-            $query,
-            $column,
+        [$operator, $value] = $this->startColumn->condition(
             $this->temporalType($instance, $column),
             $this->calculator->dueConstraint($this->rule($model, $policy), $now),
+            $instance->getDateFormat(),
         );
+
+        $query->where($instance->qualifyColumn($column), $operator, $value);
 
         if ($policy->finalAction === Action::Anonymize) {
             $query->whereNull($instance->qualifyColumn(RetentionColumns::ANONYMIZED_AT));

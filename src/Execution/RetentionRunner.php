@@ -20,6 +20,8 @@ use ItsJustVita\Retention\Holds\LegalHolds;
 use ItsJustVita\Retention\Log\DeletionLog;
 use ItsJustVita\Retention\Policies\PolicyRegistry;
 use ItsJustVita\Retention\Policies\PolicyValidator;
+use ItsJustVita\Retention\Policies\TablePolicies;
+use ItsJustVita\Retention\Policies\TablePolicy;
 
 /**
  * Executes all due final actions: validates every policy first, then
@@ -34,6 +36,8 @@ final readonly class RetentionRunner
         private PolicyRegistry $policies,
         private Dependencies $dependencies,
         private DueRecords $dueRecords,
+        private DueTableRows $dueTableRows,
+        private TablePolicies $tablePolicies,
         private ActionExecutor $executor,
         private LegalHolds $holds,
         private DeletionLog $log,
@@ -42,14 +46,15 @@ final readonly class RetentionRunner
     ) {}
 
     /**
-     * @param  list<class-string<Model>>|null  $models  null for every model with a retention policy
+     * @param  list<class-string<Model>>|null  $models  null for every model with a retention policy and every table policy
      *
      * @throws InvalidRetentionPolicy if any policy is invalid; nothing is changed then
      */
     public function run(?array $models = null, bool $dryRun = false, ?int $chunkSize = null): RunReport
     {
+        $includeTables = $models === null;
         $models ??= $this->discovery->retainedModels();
-        $this->validate($models);
+        $this->validate($models, $includeTables);
 
         $now = CarbonImmutable::now();
         $chunkSize ??= $this->defaultChunkSize();
@@ -58,6 +63,10 @@ final readonly class RetentionRunner
 
         foreach ($this->dependencies->processingOrder($models) as $model) {
             $results[] = $dryRun ? $this->preview($model, $now) : $this->process($model, $now, $chunkSize);
+        }
+
+        foreach ($includeTables ? $this->tablePolicies->all() : [] as $policy) {
+            $results[] = $dryRun ? $this->previewTable($policy, $now) : $this->processTable($policy, $now, $chunkSize);
         }
 
         $report = new RunReport(
@@ -77,9 +86,9 @@ final readonly class RetentionRunner
      *
      * @throws InvalidRetentionPolicy with the violations of all models
      */
-    public function validate(array $models): void
+    public function validate(array $models, bool $includeTables = false): void
     {
-        $this->validator->assertValid($models);
+        $this->validator->assertValid($models, $includeTables);
     }
 
     /**
@@ -137,6 +146,27 @@ final readonly class RetentionRunner
             due: $remaining['due'],
             blocked: $remaining['blocked'],
             onHold: $remaining['onHold'],
+        );
+    }
+
+    private function processTable(TablePolicy $policy, CarbonImmutable $now, int $chunkSize): ModelRunResult
+    {
+        $total = 0;
+
+        do {
+            $deleted = $this->dueTableRows->deleteBatch($policy, $now, $chunkSize);
+            $total += $deleted;
+        } while ($deleted >= $chunkSize);
+
+        return new ModelRunResult(model: $policy->table, category: $policy->category, deleted: $total);
+    }
+
+    private function previewTable(TablePolicy $policy, CarbonImmutable $now): ModelRunResult
+    {
+        return new ModelRunResult(
+            model: $policy->table,
+            category: $policy->category,
+            due: $this->dueTableRows->query($policy, $now)->count(),
         );
     }
 

@@ -15,12 +15,15 @@ use ItsJustVita\Retention\Log\LogHasher;
  *
  * The record ID is stored only as an HMAC. Because the controller holds the
  * key, the entries are pseudonymised, not anonymous (Recital 26 GDPR), and
- * have their own retention period (retention.log.retention).
+ * have their own retention period (retention.log.retention). Rows deleted
+ * through a table policy are logged in aggregate, with the table name as
+ * `model`, the number of rows in `record_count` and no hash.
  *
  * @property int $id
  * @property string $model
- * @property string $record_hash
- * @property string $key_id
+ * @property string|null $record_hash
+ * @property string|null $key_id
+ * @property int $record_count
  * @property string $category
  * @property string $rule
  * @property string $action

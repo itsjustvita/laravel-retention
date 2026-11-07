@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace ItsJustVita\Retention\Policies;
 
 use Closure;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use ItsJustVita\Retention\Concerns\Restrictable;
 use ItsJustVita\Retention\Database\RetentionColumns;
 use ItsJustVita\Retention\Enums\Action;
@@ -38,6 +40,8 @@ final readonly class PolicyValidator
         private RuleCatalogue $rules,
         private StartColumn $startColumn,
         private DeletionLog $log,
+        private TablePolicies $tablePolicies,
+        private DatabaseManager $db,
     ) {}
 
     /**
@@ -59,9 +63,14 @@ final readonly class PolicyValidator
      *
      * @throws InvalidRetentionPolicy with the violations of all models
      */
-    public function assertValid(array $models): void
+    public function assertValid(array $models, bool $includeTablePolicies = false): void
     {
         $violations = $this->environmentViolations();
+
+        if ($includeTablePolicies) {
+            $violations = [...$violations, ...$this->tablePolicyViolations()];
+        }
+
         $invalid = $violations === [] ? [] : ['environment'];
 
         foreach ($models as $model) {
@@ -215,6 +224,68 @@ final readonly class PolicyValidator
         return $this->policies->has($current::class)
             ? null
             : "[{$path}] leads to [".$current::class.'], which does not use HasRetention and cannot carry legal holds.';
+    }
+
+    /**
+     * Checks the table policies from config('retention.tables').
+     *
+     * @return list<string>
+     */
+    public function tablePolicyViolations(): array
+    {
+        $violations = [];
+
+        foreach ($this->tablePolicies->definitions() as $table => $definition) {
+            try {
+                if (! is_array($definition)) {
+                    throw new InvalidRetentionPolicy("table {$table}", ['the definition must be an array.']);
+                }
+
+                $policy = TablePolicy::fromArray($table, $definition);
+            } catch (InvalidRetentionPolicy $e) {
+                $violations[] = $e->getMessage();
+
+                continue;
+            }
+
+            foreach ($this->tablePolicyProblems($policy) as $problem) {
+                $violations[] = "table [{$table}]: {$problem}";
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function tablePolicyProblems(TablePolicy $policy): array
+    {
+        $problems = $this->rules->has($policy->ruleKey) ? [] : ["unknown retention rule [{$policy->ruleKey}]."];
+
+        try {
+            $connection = $this->db->connection($policy->connection);
+        } catch (InvalidArgumentException) {
+            return [...$problems, "connection [{$policy->connection}] is not configured."];
+        }
+
+        $schema = $connection->getSchemaBuilder();
+
+        if (! $schema->hasTable($policy->table)) {
+            return [...$problems, 'the table does not exist.'];
+        }
+
+        if (! $schema->hasColumn($policy->table, $policy->startColumn)) {
+            return [...$problems, "start column [{$policy->startColumn}] does not exist."];
+        }
+
+        $type = $this->startColumn->columnTypeNameOn($connection, $policy->table, $policy->startColumn);
+
+        if (TemporalType::fromColumnType($type) === null) {
+            $problems[] = "start column [{$policy->startColumn}] has type [{$type}]; expected a date, datetime/timestamp or integer (Unix timestamp) column.";
+        }
+
+        return $problems;
     }
 
     /**

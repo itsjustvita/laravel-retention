@@ -13,8 +13,10 @@ return new class extends Migration
         Schema::create('retention_log', function (Blueprint $table) {
             $table->id();
             $table->string('model');
-            $table->char('record_hash', 64);
-            $table->string('key_id', 16);
+            // Null for table policies, whose rows are logged in aggregate.
+            $table->char('record_hash', 64)->nullable();
+            $table->string('key_id', 16)->nullable();
+            $table->unsignedInteger('record_count')->default(1);
             $table->string('category');
             $table->string('rule');
             $table->string('action', 20);

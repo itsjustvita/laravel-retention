@@ -8,12 +8,14 @@ use Illuminate\Contracts\Container\Container;
 use ItsJustVita\Retention\Events\RecordAnonymized;
 use ItsJustVita\Retention\Events\RecordDeleted;
 use ItsJustVita\Retention\Events\RecordRestricted;
+use ItsJustVita\Retention\Events\TableRowsDeleted;
 use ItsJustVita\Retention\Models\RetentionLog;
 use LogicException;
 
 /**
  * Writes a deletion log entry for every deletion, anonymisation and
- * restriction. Runs synchronously, so the entry shares the transaction of
+ * restriction, and one aggregated entry per batch of rows deleted through a
+ * table policy. Runs synchronously, so the entry shares the transaction of
  * the action it records.
  */
 final readonly class WriteRetentionLog
@@ -23,9 +25,22 @@ final readonly class WriteRetentionLog
         private Container $container,
     ) {}
 
-    public function handle(RecordDeleted|RecordAnonymized|RecordRestricted $event): void
+    public function handle(RecordDeleted|RecordAnonymized|RecordRestricted|TableRowsDeleted $event): void
     {
         if (! $this->log->enabled()) {
+            return;
+        }
+
+        if ($event instanceof TableRowsDeleted) {
+            RetentionLog::query()->create([
+                'model' => $event->policy->table,
+                'record_count' => $event->count,
+                'category' => $event->policy->category,
+                'rule' => $event->policy->ruleKey,
+                'action' => 'deleted',
+                'trigger' => $event->trigger->value,
+            ]);
+
             return;
         }
 

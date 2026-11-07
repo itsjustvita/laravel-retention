@@ -7,7 +7,7 @@ namespace ItsJustVita\Retention\Execution;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
 use ItsJustVita\Retention\Calculation\DueConstraint;
 
@@ -30,10 +30,15 @@ final class StartColumn
 
     public function type(Model $model, string $column): ?TemporalType
     {
-        $key = $model->getConnectionName().'|'.$model->getTable().'|'.$column;
+        return $this->typeOn($model->getConnection(), $model->getTable(), $column);
+    }
+
+    public function typeOn(Connection $connection, string $table, string $column): ?TemporalType
+    {
+        $key = $connection->getName().'|'.$table.'|'.$column;
 
         if (! array_key_exists($key, $this->types)) {
-            $this->types[$key] = TemporalType::fromColumnType($this->columnTypeName($model, $column));
+            $this->types[$key] = TemporalType::fromColumnType($this->columnTypeNameOn($connection, $table, $column));
         }
 
         return $this->types[$key];
@@ -41,33 +46,33 @@ final class StartColumn
 
     public function columnTypeName(Model $model, string $column): string
     {
-        return $model->getConnection()->getSchemaBuilder()->getColumnType($model->getTable(), $column);
+        return $this->columnTypeNameOn($model->getConnection(), $model->getTable(), $column);
+    }
+
+    public function columnTypeNameOn(Connection $connection, string $table, string $column): string
+    {
+        return $connection->getSchemaBuilder()->getColumnType($table, $column);
     }
 
     /**
-     * Adds `start column before the cutoff` to the query.
+     * The operator and value that express `start column before the cutoff`.
      *
-     * @template TModel of Model
-     *
-     * @param  Builder<TModel>  $query
+     * @return array{string, int|string}
      */
-    public function constrain(Builder $query, string $column, TemporalType $type, DueConstraint $constraint): void
+    public function condition(TemporalType $type, DueConstraint $constraint, string $dateFormat): array
     {
-        $qualified = $query->getModel()->qualifyColumn($column);
         $cutoff = $constraint->cutoff;
         $operator = $constraint->inclusive ? '<=' : '<';
 
-        match ($type) {
+        return match ($type) {
             // A date d satisfies the constraint if its midnight does. Comparing with `<` against a
             // date also works where SQLite keeps "Y-m-d H:i:s" strings in date columns.
-            TemporalType::Date => $query->where($qualified, '<', ! $constraint->inclusive && $cutoff->eq($cutoff->startOfDay())
+            TemporalType::Date => ['<', ! $constraint->inclusive && $cutoff->eq($cutoff->startOfDay())
                 ? $cutoff->toDateString()
-                : $cutoff->addDay()->toDateString()),
-            TemporalType::DateTime => $query->where($qualified, $operator, $cutoff
-                ->setTimezone($this->applicationTimezone())
-                ->format($query->getModel()->getDateFormat())),
-            TemporalType::DateTimeWithZone => $query->where($qualified, $operator, $cutoff->utc()->format('Y-m-d H:i:sP')),
-            TemporalType::UnixTimestamp => $query->where($qualified, $operator, $cutoff->getTimestamp()),
+                : $cutoff->addDay()->toDateString()],
+            TemporalType::DateTime => [$operator, $cutoff->setTimezone($this->applicationTimezone())->format($dateFormat)],
+            TemporalType::DateTimeWithZone => [$operator, $cutoff->utc()->format('Y-m-d H:i:sP')],
+            TemporalType::UnixTimestamp => [$operator, $cutoff->getTimestamp()],
         };
     }
 

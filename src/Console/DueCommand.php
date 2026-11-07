@@ -12,9 +12,12 @@ use ItsJustVita\Retention\Concerns\Restrictable;
 use ItsJustVita\Retention\Database\RetentionColumns;
 use ItsJustVita\Retention\Exceptions\InvalidRetentionPolicy;
 use ItsJustVita\Retention\Execution\DueRecords;
+use ItsJustVita\Retention\Execution\DueTableRows;
 use ItsJustVita\Retention\Execution\ModelDiscovery;
 use ItsJustVita\Retention\Execution\RetentionRunner;
 use ItsJustVita\Retention\Policies\PolicyRegistry;
+use ItsJustVita\Retention\Policies\TablePolicies;
+use ItsJustVita\Retention\Policies\TablePolicy;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(name: 'retention:due')]
@@ -26,13 +29,14 @@ final class DueCommand extends Command
 
     protected $description = 'Show how many records are due for deletion or anonymisation';
 
-    public function handle(ModelDiscovery $discovery, RetentionRunner $runner, DueRecords $dueRecords, PolicyRegistry $policies): int
+    public function handle(ModelDiscovery $discovery, RetentionRunner $runner, DueRecords $dueRecords, DueTableRows $dueTableRows, TablePolicies $tablePolicies, PolicyRegistry $policies): int
     {
         try {
             $days = $this->days();
             $names = $this->listOption('model');
             $models = $names === [] ? $discovery->retainedModels() : $discovery->resolve($names);
-            $runner->validate($models);
+            $runner->validate($models, includeTables: $names === []);
+            $tables = $names === [] ? $tablePolicies->all() : [];
         } catch (InvalidRetentionPolicy $e) {
             $this->components->error('Retention policies are invalid.');
             foreach ($e->violations as $violation) {
@@ -49,9 +53,23 @@ final class DueCommand extends Command
         $now = CarbonImmutable::now();
         $horizon = $now->addDays($days);
 
+        $tableRows = array_map(function (TablePolicy $policy) use ($dueTableRows, $now, $horizon): array {
+            $dueNow = $dueTableRows->query($policy, $now)->count();
+
+            return [
+                $policy->category,
+                $policy->table,
+                (string) $dueNow,
+                '0',
+                '0',
+                (string) ($dueTableRows->query($policy, $horizon)->count() - $dueNow),
+                '–',
+            ];
+        }, array_values($tables));
+
         $this->table(
             ['Category', 'Model', 'Due now', 'Blocked', 'On hold', "Due within {$days} days", 'Restricted'],
-            array_map(function (string $model) use ($runner, $dueRecords, $policies, $now, $horizon): array {
+            [...array_map(function (string $model) use ($runner, $dueRecords, $policies, $now, $horizon): array {
                 $remaining = $runner->remaining($model, $now);
                 $expired = $remaining['due'] + $remaining['blocked'] + $remaining['onHold'];
                 $expiredByHorizon = $dueRecords->query($model, $horizon, excludeBlocked: false, excludeHeld: false)->count();
@@ -65,7 +83,7 @@ final class DueCommand extends Command
                     (string) ($expiredByHorizon - $expired),
                     $this->restrictedCount($model),
                 ];
-            }, $models),
+            }, $models), ...$tableRows],
         );
 
         return self::SUCCESS;

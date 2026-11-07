@@ -48,6 +48,66 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Table policies
+    |--------------------------------------------------------------------------
+    |
+    | Retention rules for tables without a model that may hold personal data,
+    | e.g. sessions, password_reset_tokens, failed_jobs or notifications.
+    | Rows are deleted through the query builder: no model events, no legal
+    | holds, and the deletion log records only the number of rows.
+    | The start column may be a date, datetime or Unix timestamp column.
+    |
+    | 'sessions' => [
+    |     'category' => 'sessions',
+    |     'label' => 'User sessions',
+    |     'rule' => 'server_logs',
+    |     'starts_at' => 'last_activity',
+    |     'start_event' => 'collection',   // collection | end_of_transaction | end_of_relationship
+    |     'responsible' => 'IT',
+    | ],
+    |
+    */
+
+    'tables' => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Exclusions
+    |--------------------------------------------------------------------------
+    |
+    | Models and tables deliberately without a retention policy. Every entry
+    | needs a justification, which ends up in the deletion concept. An
+    | excluded model also covers its table. Only tables without personal
+    | data are excluded by default; decide for yourself about sessions,
+    | jobs, failed_jobs, password_reset_tokens and notifications.
+    |
+    */
+
+    'exclusions' => [
+        'models' => [],
+        'tables' => [
+            'migrations' => 'Framework bookkeeping without personal data.',
+            'cache' => 'Short-lived framework cache. Review this if personal data is cached.',
+            'cache_locks' => 'Framework locks without personal data.',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Audit
+    |--------------------------------------------------------------------------
+    |
+    | The database connections whose tables retention:audit checks. Null is
+    | the default connection.
+    |
+    */
+
+    'audit' => [
+        'connections' => [null],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Legal holds
     |--------------------------------------------------------------------------
     |

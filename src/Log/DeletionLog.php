@@ -42,6 +42,17 @@ final readonly class DeletionLog
         return false;
     }
 
+    /**
+     * Whether record IDs are pseudonymised with APP_KEY because no dedicated
+     * key is set.
+     */
+    public function usesApplicationKey(): bool
+    {
+        $key = $this->config->get('retention.log.key');
+
+        return ! is_string($key) || $key === '';
+    }
+
     public function retention(): Period
     {
         $value = $this->config->get('retention.log.retention', 'P3Y');

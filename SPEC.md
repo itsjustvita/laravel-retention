@@ -280,9 +280,11 @@ Start columns may be `date` (a calendar date in the retention timezone), `dateti
 2. **Tables:** lists every table of the configured connections (`Schema::getTables()`) that is neither used by a model with a policy, nor governed by a table policy, nor excluded. This catches tables without models that often hold personal data: `sessions`, `password_reset_tokens`, `failed_jobs`, `jobs`, `notifications`, `telescope_entries`.
 3. **Policies:** runs validation and the foreign key checks (see Dependencies). Warns if the deletion log falls back to `APP_KEY`.
 
-Exclusions for models and tables are configured with a justification that ends up in the document. Default exclusions are shipped only for tables without personal data (`migrations`, `cache`, `cache_locks`). The package's own tables are covered by their own rules.
+Errors fail the command; warnings (a foreign key not covered by `blockedBy()`, the log falling back to `APP_KEY`, exclusions that no longer apply, one category with different labels) only fail with `--strict`. `retention.audit.connections` lists the connections to check (default: the default connection); tables are read from each connection's current schema only.
 
-Table policies in the config cover tables without a model. They support only `delete` and run through the query builder, so no model events fire:
+Exclusions for models and tables are configured with a justification that ends up in the document. An excluded model also covers its table. Default exclusions are shipped only for tables without personal data (`migrations`, `cache`, `cache_locks`). The package's own tables are covered by their own rules.
+
+Table policies in the config cover tables without a model. They support only `delete` and run through the query builder, so no model events fire and legal holds do not apply. `retention:run` deletes their due rows in batches of the chunk size, each batch in its own transaction together with one aggregated log entry; `retention:due` lists them too. With `--model=`, table policies are left out:
 
 ```php
 'tables' => [
@@ -303,7 +305,7 @@ Every action dispatches events (`RecordDeleted`, `RecordAnonymized`, `RecordRest
 
 ## Deletion log
 
-Table `retention_log` as evidence under the accountability principle, Art. 5 (2) GDPR. It stores only minimal, pseudonymised data: model class or table, hashed ID, key ID, data category, rule, action, trigger (`schedule`, `erasure_request`, `manual`), timestamp.
+Table `retention_log` as evidence under the accountability principle, Art. 5 (2) GDPR. It stores only minimal, pseudonymised data: model class or table, hashed ID, key ID, data category, rule, action, trigger (`schedule`, `erasure_request`, `manual`), timestamp. Rows deleted through a table policy are logged in aggregate: the table name, the number of rows (`record_count`) and no hash, so they cannot be verified individually.
 
 The hashed ID is an HMAC with a dedicated key (`RETENTION_LOG_KEY`, falling back to `APP_KEY`). A separate key means rotating `APP_KEY` does not break verification; `key_id` records which key produced each hash, so the log key itself can be rotated. `RetentionLog::verify(Invoice::class, 4711)` finds the entries for a specific record when its ID is known from elsewhere (e.g. the data subject's customer number), but the hash cannot be reversed.
 

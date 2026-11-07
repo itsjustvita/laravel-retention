@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace ItsJustVita\Retention\Execution;
 
-use Illuminate\Database\Eloquent\Model;
-
 /**
  * What retention:run did, or would do, for one model.
  */
 final readonly class ModelRunResult
 {
     /**
-     * @param  class-string<Model>  $model
+     * @param  string  $model  Model class, or table name for a table policy.
      * @param  int  $due  Records due and not blocked when the run started (dry runs only).
      * @param  int  $blocked  Records still due but blocked by blockedBy() relations.
      * @param  int  $onHold  Records due but on legal hold.

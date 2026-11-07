@@ -10,12 +10,14 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use ItsJustVita\Retention\Calculation\RetentionCalculator;
+use ItsJustVita\Retention\Console\AuditCommand;
 use ItsJustVita\Retention\Console\DueCommand;
 use ItsJustVita\Retention\Console\RunCommand;
 use ItsJustVita\Retention\Database\RetentionColumns;
 use ItsJustVita\Retention\Events\RecordAnonymized;
 use ItsJustVita\Retention\Events\RecordDeleted;
 use ItsJustVita\Retention\Events\RecordRestricted;
+use ItsJustVita\Retention\Events\TableRowsDeleted;
 use ItsJustVita\Retention\Execution\StartColumn;
 use ItsJustVita\Retention\Log\LogHasher;
 use ItsJustVita\Retention\Log\WriteRetentionLog;
@@ -68,7 +70,7 @@ class RetentionServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'retention');
 
         $this->app->make(Dispatcher::class)->listen(
-            [RecordDeleted::class, RecordAnonymized::class, RecordRestricted::class],
+            [RecordDeleted::class, RecordAnonymized::class, RecordRestricted::class, TableRowsDeleted::class],
             WriteRetentionLog::class,
         );
 
@@ -88,6 +90,7 @@ class RetentionServiceProvider extends ServiceProvider
             $this->commands([
                 RunCommand::class,
                 DueCommand::class,
+                AuditCommand::class,
             ]);
         }
     }
