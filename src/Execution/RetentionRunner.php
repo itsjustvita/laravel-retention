@@ -79,19 +79,7 @@ final readonly class RetentionRunner
      */
     public function validate(array $models): void
     {
-        $violations = $this->validator->environmentViolations();
-        $invalid = $violations === [] ? [] : ['environment' => true];
-
-        foreach ($models as $model) {
-            foreach ($this->validator->violations($model) as $violation) {
-                $violations[] = "{$model}: {$violation}";
-                $invalid[$model] = true;
-            }
-        }
-
-        if ($violations !== []) {
-            throw new InvalidRetentionPolicy(implode(', ', array_keys($invalid)), $violations);
-        }
+        $this->validator->assertValid($models);
     }
 
     /**

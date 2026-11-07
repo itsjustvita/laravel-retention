@@ -44,6 +44,16 @@ class Customer extends Model
     }
 
     /**
+     * Notes have no retention policy.
+     *
+     * @return HasMany<Note, $this>
+     */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(Note::class);
+    }
+
+    /**
      * @return HasMany<Order, $this>
      */
     public function orders(): HasMany

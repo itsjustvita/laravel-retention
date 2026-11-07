@@ -193,7 +193,7 @@ it('throws all violations at once', function () {
     expect(fn () => app(PolicyValidator::class)->validate($model))
         ->toThrow(function (InvalidRetentionPolicy $e) use ($model) {
             expect($e->subject)->toBe($model)
-                ->and($e->violations)->toHaveCount(2)
+                ->and($e->violations)->toHaveCount(3)
                 ->and($e->getMessage())->toContain("Invalid retention policy for [{$model}]:\n- unknown retention rule [no_such_rule].");
         });
 });

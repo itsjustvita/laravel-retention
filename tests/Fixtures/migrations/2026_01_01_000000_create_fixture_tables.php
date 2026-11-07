@@ -40,6 +40,12 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('notes', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('customer_id')->constrained();
+            $table->text('body');
+        });
+
         Schema::create('server_logs', function (Blueprint $table) {
             $table->id();
             $table->string('ip_address');
@@ -50,6 +56,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('server_logs');
+        Schema::dropIfExists('notes');
         Schema::dropIfExists('invoices');
         Schema::dropIfExists('orders');
         Schema::dropIfExists('customers');

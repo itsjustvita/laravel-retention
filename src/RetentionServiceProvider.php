@@ -65,6 +65,8 @@ class RetentionServiceProvider extends ServiceProvider
     {
         RetentionColumns::registerMacros();
 
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'retention');
+
         $this->app->make(Dispatcher::class)->listen(
             [RecordDeleted::class, RecordAnonymized::class, RecordRestricted::class],
             WriteRetentionLog::class,
@@ -74,6 +76,10 @@ class RetentionServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/retention.php' => config_path('retention.php'),
             ], 'retention-config');
+
+            $this->publishes([
+                __DIR__.'/../lang' => $this->app->langPath('vendor/retention'),
+            ], 'retention-translations');
 
             $this->publishesMigrations([
                 __DIR__.'/../database/migrations' => database_path('migrations'),

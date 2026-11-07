@@ -8,6 +8,7 @@ use ItsJustVita\Retention\Tests\Fixtures\Models\Customer;
 use ItsJustVita\Retention\Tests\Fixtures\Models\CycleA;
 use ItsJustVita\Retention\Tests\Fixtures\Models\CycleB;
 use ItsJustVita\Retention\Tests\Fixtures\Models\Invoice;
+use ItsJustVita\Retention\Tests\Fixtures\Models\Note;
 use ItsJustVita\Retention\Tests\Fixtures\Models\Order;
 use ItsJustVita\Retention\Tests\Fixtures\Models\PolicyProbe;
 use ItsJustVita\Retention\Tests\Fixtures\Models\RestrictableProbe;
@@ -22,6 +23,7 @@ it('finds the Eloquent models in the configured paths, sorted by class name', fu
         CycleA::class,
         CycleB::class,
         Invoice::class,
+        Note::class,
         Order::class,
         PolicyProbe::class,
         RestrictableProbe::class,

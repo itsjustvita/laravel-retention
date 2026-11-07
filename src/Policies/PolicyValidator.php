@@ -53,6 +53,30 @@ final readonly class PolicyValidator
     }
 
     /**
+     * Validates several models and the package environment at once.
+     *
+     * @param  list<string>  $models
+     *
+     * @throws InvalidRetentionPolicy with the violations of all models
+     */
+    public function assertValid(array $models): void
+    {
+        $violations = $this->environmentViolations();
+        $invalid = $violations === [] ? [] : ['environment'];
+
+        foreach ($models as $model) {
+            foreach ($this->violations($model) as $violation) {
+                $violations[] = "{$model}: {$violation}";
+                $invalid[] = $model;
+            }
+        }
+
+        if ($violations !== []) {
+            throw new InvalidRetentionPolicy(implode(', ', array_values(array_unique($invalid))), $violations);
+        }
+    }
+
+    /**
      * @return list<string>
      */
     public function violations(string $model): array
@@ -145,6 +169,10 @@ final readonly class PolicyValidator
 
         if ($policy->blockingRelations !== [] && $policy->finalAction === Action::Anonymize) {
             $violations[] = 'blockedBy() only applies to action delete; an anonymised record keeps its keys.';
+        }
+
+        if ($policy->blockingRelations !== [] && ! $this->usesRestrictable($model)) {
+            $violations[] = 'blockedBy() requires the Restrictable trait, because an erasure request restricts a record while it is blocked.';
         }
 
         foreach ($policy->blockingRelations as $relation) {

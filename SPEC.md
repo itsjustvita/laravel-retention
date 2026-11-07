@@ -186,7 +186,7 @@ Column checks need a migrated database.
 
 ### Restriction
 
-Models whose table has `restricted_at` (migration helper `$table->restrictable()`) use the `Restrictable` trait, analogous to `SoftDeletes`. It adds a global scope that hides restricted records from normal queries, including relation queries. Access only explicitly via `Model::withRestricted()`, `onlyRestricted()` or `withoutRestricted()`. This implements restriction of processing under Art. 18 GDPR / § 35 BDSG. The trait is required for models whose rule blocks erasure; a global scope on `HasRetention` itself would break queries on tables without the column.
+Models whose table has `restricted_at` (migration helper `$table->restrictable()`) use the `Restrictable` trait, analogous to `SoftDeletes`. It adds a global scope that hides restricted records from normal queries, including relation queries. Access only explicitly via `Model::withRestricted()`, `onlyRestricted()` or `withoutRestricted()`. This implements restriction of processing under Art. 18 GDPR / § 35 BDSG. The trait is required for models whose rule blocks erasure or whose policy uses `blockedBy()`; a global scope on `HasRetention` itself would break queries on tables without the column.
 
 Restricting and lifting a restriction do not touch `updated_at`; restricting dispatches `RecordRestricted`, and restricting an already restricted record is a no-op.
 
@@ -246,7 +246,9 @@ Decision per record; the first matching row applies:
 
 > **Decision D1:** when the start column is null (e.g. contract still active), the record is left untouched and reported as `start_event_pending` with an explanation ("still required, e.g. for an active contract"; Art. 17 (1) (a) GDPR does not apply while the data is still needed for its purpose). The controller then decides by hand. A policy can opt into `->onErasureBeforeStart('apply')` where a missing start event means "no duty yet", e.g. draft invoices without `issued_at`. Rejected alternatives: restrict immediately (dangerous: the global scope would hide an active customer from the application) or apply the final action immediately (wrong for active contracts).
 
-The returned `ErasureReport` lists per data category what was deleted, anonymised, restricted (with the final deletion date and erasure ground), held, or left pending. It should be directly usable for replying to the data subject (`toArray()`, `toMarkdown()`, localised en/de). The deletion date shown for restricted records is computed with the rule in force when the report is created; if the rule changes later, the actual deletion follows the new rule.
+The returned `ErasureReport` lists per data category what was deleted, anonymised, restricted (with the date of the final action and the erasure ground), held, or left pending, and is directly usable for replying to the data subject: `toArray()` and `toMarkdown($locale)`. The Markdown reply lists counts, dates and legal grounds, never record keys; its texts are translation files (en and de shipped, publishable with `--tag=retention-translations`). The date shown for restricted records is computed with the rule in force when the report is created; if the rule changes later, the actual action follows the new rule.
+
+All records are processed in one transaction, so a failing action rolls the whole request back. `dryRun()` predicts exactly what `execute()` would do without changing anything: it keeps track of the records it would delete, so a parent whose dependents would all be deleted is predicted as deleted. With `onErasureBeforeStart('apply')`, a record without start event skips row 3 of the table and continues with rows 4 and 5. `blockedBy()` requires the `Restrictable` trait, because row 4 restricts the record.
 
 ## Legal hold
 
