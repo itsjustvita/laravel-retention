@@ -7,12 +7,14 @@ namespace ItsJustVita\Retention\Policies;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use ItsJustVita\Retention\Concerns\Restrictable;
 use ItsJustVita\Retention\Database\RetentionColumns;
 use ItsJustVita\Retention\Enums\Action;
 use ItsJustVita\Retention\Exceptions\InvalidRetentionPolicy;
 use ItsJustVita\Retention\Exceptions\MissingRetentionPolicy;
 use ItsJustVita\Retention\Exceptions\RetentionException;
 use ItsJustVita\Retention\RetentionPolicy;
+use ItsJustVita\Retention\Rules\RetentionRule;
 use ItsJustVita\Retention\Rules\RuleCatalogue;
 use Throwable;
 
@@ -63,6 +65,7 @@ final readonly class PolicyValidator
         $violations = [
             ...$this->completenessViolations($policy),
             ...$this->anonymizerViolations($instance, $policy),
+            ...$this->restrictionViolations($instance, $policy),
             ...$this->relationViolations($instance, $policy),
             ...$this->columnViolations($instance, $policy),
         ];
@@ -188,13 +191,45 @@ final readonly class PolicyValidator
             $violations[] = 'column ['.RetentionColumns::ANONYMIZED_AT."] does not exist on table [{$table}]; add it with \$table->anonymizable(), required by action anonymize.";
         }
 
-        $rule = $policy->ruleKey !== null && $this->rules->has($policy->ruleKey) ? $this->rules->get($policy->ruleKey) : null;
+        $rule = $this->rule($policy);
 
-        if ($rule?->blocksErasure && ! in_array(RetentionColumns::RESTRICTED_AT, $columns, true)) {
-            $violations[] = 'column ['.RetentionColumns::RESTRICTED_AT."] does not exist on table [{$table}]; add it with \$table->restrictable(), required because rule [{$rule->key}] blocks erasure.";
+        if (! in_array(RetentionColumns::RESTRICTED_AT, $columns, true)) {
+            $missing = 'column ['.RetentionColumns::RESTRICTED_AT."] does not exist on table [{$table}]; add it with \$table->restrictable()";
+
+            if ($rule?->blocksErasure) {
+                $violations[] = "{$missing}, required because rule [{$rule->key}] blocks erasure.";
+            } elseif ($this->usesRestrictable($model)) {
+                $violations[] = "{$missing}, required by the Restrictable trait.";
+            }
         }
 
         return $violations;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function restrictionViolations(Model $model, RetentionPolicy $policy): array
+    {
+        $rule = $this->rule($policy);
+
+        if ($rule?->blocksErasure && ! $this->usesRestrictable($model)) {
+            return ["rule [{$rule->key}] blocks erasure, so the model must use the Restrictable trait."];
+        }
+
+        return [];
+    }
+
+    private function rule(RetentionPolicy $policy): ?RetentionRule
+    {
+        return $policy->ruleKey !== null && $this->rules->has($policy->ruleKey)
+            ? $this->rules->get($policy->ruleKey)
+            : null;
+    }
+
+    private function usesRestrictable(Model $model): bool
+    {
+        return in_array(Restrictable::class, class_uses_recursive($model), true);
     }
 
     /**

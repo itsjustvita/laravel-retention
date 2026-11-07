@@ -13,6 +13,7 @@ use ItsJustVita\Retention\Tests\Fixtures\Models\CycleA;
 use ItsJustVita\Retention\Tests\Fixtures\Models\Invoice;
 use ItsJustVita\Retention\Tests\Fixtures\Models\Order;
 use ItsJustVita\Retention\Tests\Fixtures\Models\PolicyProbe;
+use ItsJustVita\Retention\Tests\Fixtures\Models\RestrictableProbe;
 use ItsJustVita\Retention\Tests\Fixtures\Models\ServerLog;
 
 /**
@@ -48,7 +49,7 @@ it('accepts valid policies', function (string $model) {
 ]);
 
 it('accepts every form of anonymizer', function (Closure|string $anonymizer) {
-    $model = probe(fn (RetentionPolicy $p) => $p->rule('bgb_limitation_period')->action('anonymize')->anonymizeUsing($anonymizer));
+    $model = probe(fn (RetentionPolicy $p) => $p->action('anonymize')->anonymizeUsing($anonymizer));
 
     expect(app(PolicyValidator::class)->violations($model))->toBe([]);
 })->with([
@@ -96,6 +97,11 @@ it('reports invalid policies', function (Closure $adjust, string $table, string 
         'server_logs',
         'column [restricted_at] does not exist on table [server_logs]; add it with $table->restrictable(), required because rule [bgb_limitation_period] blocks erasure.',
     ],
+    'blocking rule without the Restrictable trait' => [
+        fn (RetentionPolicy $p) => $p->rule('bgb_limitation_period'),
+        'customers',
+        'rule [bgb_limitation_period] blocks erasure, so the model must use the Restrictable trait.',
+    ],
     'unknown relation in blockedBy()' => [
         fn (RetentionPolicy $p) => $p->blockedBy('payments'),
         'customers',
@@ -122,6 +128,14 @@ it('reports invalid policies', function (Closure $adjust, string $table, string 
         'table [no_such_table] does not exist; run the migrations before validating.',
     ],
 ]);
+
+it('requires the restricted_at column for every model with the Restrictable trait', function () {
+    probe(table: 'server_logs', adjust: fn (RetentionPolicy $p) => $p->startsAt('logged_at', StartEvent::Collection));
+
+    expect(app(PolicyValidator::class)->violations(RestrictableProbe::class))->toBe([
+        'column [restricted_at] does not exist on table [server_logs]; add it with $table->restrictable(), required by the Restrictable trait.',
+    ]);
+});
 
 it('reports missing required parts', function (string $message) {
     $model = probe(base: fn () => RetentionPolicy::category('probe', 'Probe'));

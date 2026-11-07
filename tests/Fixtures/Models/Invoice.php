@@ -6,8 +6,10 @@ namespace ItsJustVita\Retention\Tests\Fixtures\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use ItsJustVita\Retention\Attributes\Retention;
 use ItsJustVita\Retention\Concerns\HasRetention;
+use ItsJustVita\Retention\Concerns\Restrictable;
 use ItsJustVita\Retention\Enums\Action;
 use ItsJustVita\Retention\Enums\StartEvent;
 
@@ -24,6 +26,8 @@ use ItsJustVita\Retention\Enums\StartEvent;
 class Invoice extends Model
 {
     use HasRetention;
+    use Restrictable;
+    use SoftDeletes;
 
     protected $guarded = [];
 

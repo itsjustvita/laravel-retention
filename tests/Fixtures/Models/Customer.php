@@ -7,12 +7,14 @@ namespace ItsJustVita\Retention\Tests\Fixtures\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use ItsJustVita\Retention\Concerns\HasRetention;
+use ItsJustVita\Retention\Concerns\Restrictable;
 use ItsJustVita\Retention\Enums\StartEvent;
 use ItsJustVita\Retention\RetentionPolicy;
 
 class Customer extends Model
 {
     use HasRetention;
+    use Restrictable;
 
     protected $guarded = [];
 

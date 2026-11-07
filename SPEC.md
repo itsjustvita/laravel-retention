@@ -180,11 +180,15 @@ Column checks need a migrated database.
 
 `delete`: hard delete. With SoftDeletes, `forceDelete()`; soft-deleted records are always included when selecting due records. Model events fire so applications can clean up files etc.
 
-`anonymize`: invokes the anonymiser, then sets `anonymized_at` (migration helper `$table->anonymizable()`). Records with `anonymized_at` set are never selected again, so anonymisation runs exactly once and is logged once. Anonymisation also clears `restricted_at`, since the record no longer contains personal data.
+`anonymize`: invokes the anonymiser, then sets `anonymized_at` (migration helper `$table->anonymizable()`). Records with `anonymized_at` set are never selected again, so anonymisation runs exactly once and is logged once. Anonymisation also clears `restricted_at`, since the record no longer contains personal data. The marker is written without touching `updated_at`; the anonymiser decides whether its own save does.
+
+`ActionExecutor::apply($record, $trigger)` applies the final action immediately and returns an `ActionOutcome`: `deleted`, `anonymized`, `already_anonymized` (nothing changed), `blocked` (`blockedBy()` relations still hold records) or `cancelled` (a `deleting` listener returned false). It does not decide whether a record is due and does not open a transaction; `retention:run` and `Erasure` do both. Events carry the model, its policy and the trigger (`schedule`, `erasure_request`, `manual`).
 
 ### Restriction
 
-Sets `restricted_at` (migration helper `$table->restrictable()`). A global scope hides restricted records from normal queries. Access only explicitly via `Model::withRestricted()` or `onlyRestricted()`. This implements restriction of processing under Art. 18 GDPR / § 35 BDSG.
+Models whose table has `restricted_at` (migration helper `$table->restrictable()`) use the `Restrictable` trait, analogous to `SoftDeletes`. It adds a global scope that hides restricted records from normal queries, including relation queries. Access only explicitly via `Model::withRestricted()`, `onlyRestricted()` or `withoutRestricted()`. This implements restriction of processing under Art. 18 GDPR / § 35 BDSG. The trait is required for models whose rule blocks erasure; a global scope on `HasRetention` itself would break queries on tables without the column.
+
+Restricting and lifting a restriction do not touch `updated_at`; restricting dispatches `RecordRestricted`, and restricting an already restricted record is a no-op.
 
 A record is restricted in two ways:
 

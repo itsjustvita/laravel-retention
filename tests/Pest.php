@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use Carbon\CarbonImmutable;
 use ItsJustVita\Retention\Rules\RetentionRule;
+use ItsJustVita\Retention\Tests\Fixtures\Models\Customer;
+use ItsJustVita\Retention\Tests\Fixtures\Models\Invoice;
+use ItsJustVita\Retention\Tests\Fixtures\Models\Order;
 use ItsJustVita\Retention\Tests\TestCase;
 
 pest()->extend(TestCase::class)->in(__DIR__);
@@ -31,4 +34,33 @@ function makeRule(string $period, string $counting = 'event', array $overrides =
 function at(string $datetime, string $timezone = 'Europe/Berlin'): CarbonImmutable
 {
     return CarbonImmutable::parse($datetime, $timezone);
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function createCustomer(array $attributes = []): Customer
+{
+    return Customer::create([
+        'name' => 'Erika Mustermann',
+        'email' => 'erika@example.com',
+        'phone' => '+49 30 1234567',
+        ...$attributes,
+    ]);
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function createOrder(Customer $customer, array $attributes = []): Order
+{
+    return Order::create(['customer_id' => $customer->id, ...$attributes]);
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function createInvoice(Customer $customer, array $attributes = []): Invoice
+{
+    return Invoice::create(['customer_id' => $customer->id, 'issued_at' => '2025-03-15', ...$attributes]);
 }

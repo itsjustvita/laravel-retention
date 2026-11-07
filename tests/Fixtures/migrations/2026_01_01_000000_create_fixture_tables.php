@@ -26,6 +26,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained();
             $table->timestamp('completed_at')->nullable();
             $table->restrictable();
+            $table->softDeletes();
             $table->timestamps();
         });
 
@@ -35,6 +36,7 @@ return new class extends Migration
             $table->foreignId('order_id')->nullable()->constrained();
             $table->date('issued_at')->nullable();
             $table->restrictable();
+            $table->softDeletes();
             $table->timestamps();
         });
 

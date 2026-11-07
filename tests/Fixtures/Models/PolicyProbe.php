@@ -33,7 +33,10 @@ class PolicyProbe extends Model
         return (static::$policy ?? throw new LogicException('No probe policy set.'))();
     }
 
-    public function anonymizeForRetention(): void {}
+    public function anonymizeForRetention(): void
+    {
+        $this->forceFill(['name' => 'deleted'])->saveQuietly();
+    }
 
     /**
      * @return HasMany<Invoice, $this>

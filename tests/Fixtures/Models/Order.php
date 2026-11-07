@@ -7,13 +7,17 @@ namespace ItsJustVita\Retention\Tests\Fixtures\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use ItsJustVita\Retention\Concerns\HasRetention;
+use ItsJustVita\Retention\Concerns\Restrictable;
 use ItsJustVita\Retention\Enums\StartEvent;
 use ItsJustVita\Retention\RetentionPolicy;
 
 class Order extends Model
 {
     use HasRetention;
+    use Restrictable;
+    use SoftDeletes;
 
     protected $guarded = [];
 
