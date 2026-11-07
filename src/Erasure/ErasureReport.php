@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Eloquent\Model;
 use ItsJustVita\Retention\Enums\ErasureStatus;
+use ItsJustVita\Retention\Rules\RuleText;
 
 /**
  * Result of an erasure request, per data category, in processing order.
@@ -166,7 +167,9 @@ final readonly class ErasureReport
         return $t('status.restricted', [
             'records' => $records,
             'date' => $entry->scheduledFor->format($dateFormat),
-            'ground' => (string) $entry->erasureGround,
+            'ground' => (string) ($entry->ruleKey === null
+                ? $entry->erasureGround
+                : RuleText::translate($entry->ruleKey, 'erasure_ground', $entry->erasureGround, $locale)),
             'action' => $action,
         ]);
     }

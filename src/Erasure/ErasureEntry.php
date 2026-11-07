@@ -30,5 +30,6 @@ final readonly class ErasureEntry
         public ?CarbonImmutable $scheduledFor = null,
         public bool $waitsForDependents = false,
         public ?string $erasureGround = null,
+        public ?string $ruleKey = null,
     ) {}
 }

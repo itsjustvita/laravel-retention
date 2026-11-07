@@ -25,14 +25,20 @@
         "illuminate/contracts": "^13.0",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
-        "illuminate/translation": "^13.0"
+        "illuminate/translation": "^13.0",
+        "illuminate/view": "^13.0",
+        "symfony/process": "^7.4.5|^8.0.5"
     },
     "require-dev": {
+        "barryvdh/laravel-dompdf": "^3.1",
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.0",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0"
+    },
+    "suggest": {
+        "barryvdh/laravel-dompdf": "Required to export the deletion concept as PDF (retention:generate --format=pdf)."
     },
     "autoload": {
         "psr-4": {

@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Löschkonzept</title>
+<style>
+    body { font-family: "DejaVu Sans", "Helvetica Neue", Arial, sans-serif; font-size: 11pt; line-height: 1.45; color: #1a1a1a; max-width: 62rem; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 22pt; margin-bottom: .2rem; }
+    h2 { font-size: 15pt; margin-top: 2rem; border-bottom: 1px solid #999; padding-bottom: .2rem; }
+    h3 { font-size: 12pt; margin-top: 1.4rem; }
+    table { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin: .6rem 0; }
+    th, td { border: 1px solid #999; padding: .3rem .45rem; text-align: left; vertical-align: top; }
+    th { background: #eee; }
+    .cover { page-break-after: always; }
+    .cover table { width: auto; font-size: 11pt; }
+    .subtitle { color: #555; margin-top: 0; }
+    @media print { body { margin: 0; max-width: none; } h2, h3 { page-break-after: avoid; } tr { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<section class="cover">
+<h1>Löschkonzept</h1>
+<p class="subtitle">Aufgebaut nach DIN 66398</p>
+<table>
+<tr><th>Organisation</th><td>Beispiel GmbH</td></tr>
+<tr><th>Verantwortlicher</th><td>Beispiel GmbH, Musterstraße 1, 10115 Berlin</td></tr>
+<tr><th>Datenschutzbeauftragte Person</th><td>Erika Datenschutz, dsb@example.com</td></tr>
+<tr><th>Version</th><td>1.2</td></tr>
+<tr><th>Stand</th><td>07.11.2026</td></tr>
+</table>
+</section>
+
+<h2>1. Zweck und Geltungsbereich</h2>
+<p>Dieses Löschkonzept dokumentiert, welche personenbezogenen Daten diese Anwendung speichert, wie lange sie aufbewahrt werden und wie sie gelöscht, anonymisiert oder eingeschränkt werden. Es wird aus denselben Festlegungen erzeugt, die die Anwendung durchsetzt, sodass Dokument und tatsächliches Verhalten übereinstimmen. Es umfasst die Daten in der Datenbank der Anwendung. Es dient der Rechenschaftspflicht nach Art. 5 Abs. 2 DSGVO und setzt die Speicherbegrenzung nach Art. 5 Abs. 1 lit. e DSGVO um.</p>
+
+<h2>2. Datenarten</h2>
+<table>
+<thead>
+<tr>
+<th>Datenart</th>
+<th>Models und Tabellen</th>
+<th>Löschklasse</th>
+<th>Regel</th>
+<th>Rechtsgrundlage</th>
+<th>Endaktion</th>
+<th>Bei einem Löschantrag</th>
+<th>Verantwortliche Stelle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Customer master data</td>
+<td>ItsJustVita\Retention\Tests\Fixtures\Models\Customer (customers)</td>
+<td>3 Jahre, Ende der Beziehung*</td>
+<td>Vertragsdaten nach Vertragsende</td>
+<td>§§ 195, 199 Abs. 1 BGB</td>
+<td>Anonymisieren</td>
+<td>Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. e DSGVO)</td>
+<td>Sales</td>
+</tr>
+<tr>
+<td>Customer invoices</td>
+<td>ItsJustVita\Retention\Tests\Fixtures\Models\Invoice (invoices)</td>
+<td>8 Jahre, Ende des Vorgangs*</td>
+<td>Buchungsbelege (z. B. Rechnungen)</td>
+<td>§ 147 Abs. 1 Nr. 4, Abs. 3, 4 AO; § 257 Abs. 1 Nr. 4, Abs. 4, 5 HGB; § 14b Abs. 1 UStG</td>
+<td>Löschen</td>
+<td>Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG)</td>
+<td>Accounting</td>
+</tr>
+<tr>
+<td>Orders</td>
+<td>ItsJustVita\Retention\Tests\Fixtures\Models\Order (orders)</td>
+<td>3 Jahre, Ende des Vorgangs*</td>
+<td>Vertragsdaten nach Vertragsende</td>
+<td>§§ 195, 199 Abs. 1 BGB</td>
+<td>Löschen</td>
+<td>Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. e DSGVO)</td>
+<td>Sales</td>
+</tr>
+<tr>
+<td>Web server logs</td>
+<td>ItsJustVita\Retention\Tests\Fixtures\Models\ServerLog (server_logs)</td>
+<td>7 Tage, Erhebung der Daten</td>
+<td>Server-Logs</td>
+<td>Art. 5 Abs. 1 lit. e, Art. 6 Abs. 1 lit. f DSGVO</td>
+<td>Löschen</td>
+<td>Endaktion sofort</td>
+<td>IT</td>
+</tr>
+<tr>
+<td>User sessions</td>
+<td>sessions</td>
+<td>7 Tage, Erhebung der Daten</td>
+<td>Server-Logs</td>
+<td>Art. 5 Abs. 1 lit. e, Art. 6 Abs. 1 lit. f DSGVO</td>
+<td>Löschen</td>
+<td>Endaktion sofort</td>
+<td>IT</td>
+</tr>
+</tbody>
+</table>
+
+<h2>3. Löschklassen-Matrix</h2>
+<p>Löschklassen verbinden die Frist mit dem Ereignis, das sie auslöst.</p>
+<table>
+<thead>
+<tr>
+<th>Frist</th>
+<th>Erhebung der Daten</th>
+<th>Ende des Vorgangs</th>
+<th>Ende der Beziehung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7 Tage</td>
+<td>User sessions, Web server logs</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3 Jahre</td>
+<td></td>
+<td>Orders*</td>
+<td>Customer master data*</td>
+</tr>
+<tr>
+<td>8 Jahre</td>
+<td></td>
+<td>Customer invoices*</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>* Fristbeginn am Ende des Kalenderjahres, in dem das Startereignis eingetreten ist.</p>
+
+<h2>4. Löschregeln je Datenart</h2>
+<h3>Customer master data</h3>
+<ul>
+<li><strong>Gilt für:</strong> ItsJustVita\Retention\Tests\Fixtures\Models\Customer (customers)</li>
+<li><strong>Regel:</strong> Vertragsdaten nach Vertragsende (Gesetzlich)</li>
+<li><strong>Frist:</strong> 3 Jahre</li>
+<li><strong>Startereignis:</strong> Ende der Beziehung</li>
+<li><strong>Fristbeginn:</strong> Ab Ende des Kalenderjahres des Startereignisses</li>
+<li><strong>Rechtsgrundlage:</strong> §§ 195, 199 Abs. 1 BGB</li>
+<li><strong>Endaktion:</strong> Anonymisieren</li>
+<li><strong>Bei einem Löschantrag:</strong> Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. e DSGVO)</li>
+<li><strong>Verantwortliche Stelle:</strong> Sales</li>
+<li><strong>Hinweis:</strong> Regelmäßige Verjährungsfrist. Keine Aufbewahrungspflicht: Die Daten werden zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen aufbewahrt.</li>
+</ul>
+<h3>Customer invoices</h3>
+<ul>
+<li><strong>Gilt für:</strong> ItsJustVita\Retention\Tests\Fixtures\Models\Invoice (invoices)</li>
+<li><strong>Regel:</strong> Buchungsbelege (z. B. Rechnungen) (Gesetzlich)</li>
+<li><strong>Frist:</strong> 8 Jahre</li>
+<li><strong>Startereignis:</strong> Ende des Vorgangs</li>
+<li><strong>Fristbeginn:</strong> Ab Ende des Kalenderjahres des Startereignisses</li>
+<li><strong>Rechtsgrundlage:</strong> § 147 Abs. 1 Nr. 4, Abs. 3, 4 AO; § 257 Abs. 1 Nr. 4, Abs. 4, 5 HGB; § 14b Abs. 1 UStG</li>
+<li><strong>Endaktion:</strong> Löschen</li>
+<li><strong>Bei einem Löschantrag:</strong> Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG)</li>
+<li><strong>Verantwortliche Stelle:</strong> Accounting</li>
+<li><strong>Frühere Fassungen:</strong> Bis 01.01.2025: 10 Jahre</li>
+<li>Aufbewahrungsanordnungen geerbt von: customer, order</li>
+<li><strong>Hinweis:</strong> Durch das Bürokratieentlastungsgesetz IV (BEG IV) von 10 auf 8 Jahre verkürzt, für alle Belege, deren Frist am 01.01.2025 noch nicht abgelaufen war. Bestimmte beaufsichtigte Institute (z. B. nach KWG, VAG oder WpIG) haben einen späteren Stichtag und müssen valid_from überschreiben.</li>
+</ul>
+<h3>Orders</h3>
+<ul>
+<li><strong>Gilt für:</strong> ItsJustVita\Retention\Tests\Fixtures\Models\Order (orders)</li>
+<li><strong>Regel:</strong> Vertragsdaten nach Vertragsende (Gesetzlich)</li>
+<li><strong>Frist:</strong> 3 Jahre</li>
+<li><strong>Startereignis:</strong> Ende des Vorgangs</li>
+<li><strong>Fristbeginn:</strong> Ab Ende des Kalenderjahres des Startereignisses</li>
+<li><strong>Rechtsgrundlage:</strong> §§ 195, 199 Abs. 1 BGB</li>
+<li><strong>Endaktion:</strong> Löschen</li>
+<li><strong>Bei einem Löschantrag:</strong> Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. e DSGVO)</li>
+<li><strong>Verantwortliche Stelle:</strong> Sales</li>
+<li>Löschung erst, wenn diese Relationen leer sind: invoices</li>
+<li><strong>Hinweis:</strong> Regelmäßige Verjährungsfrist. Keine Aufbewahrungspflicht: Die Daten werden zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen aufbewahrt.</li>
+</ul>
+<h3>Web server logs</h3>
+<ul>
+<li><strong>Gilt für:</strong> ItsJustVita\Retention\Tests\Fixtures\Models\ServerLog (server_logs)</li>
+<li><strong>Regel:</strong> Server-Logs (Empfehlung)</li>
+<li><strong>Frist:</strong> 7 Tage</li>
+<li><strong>Startereignis:</strong> Erhebung der Daten</li>
+<li><strong>Fristbeginn:</strong> Ab dem Startereignis</li>
+<li><strong>Rechtsgrundlage:</strong> Art. 5 Abs. 1 lit. e, Art. 6 Abs. 1 lit. f DSGVO</li>
+<li><strong>Endaktion:</strong> Löschen</li>
+<li><strong>Bei einem Löschantrag:</strong> Endaktion sofort</li>
+<li><strong>Verantwortliche Stelle:</strong> IT</li>
+<li><strong>Hinweis:</strong> Übliche Praxis für IP-Adressen in Webserver-Logs. An das IT-Sicherheitskonzept anpassen.</li>
+</ul>
+<h3>User sessions</h3>
+<p>Login sessions of the web application.</p>
+<ul>
+<li><strong>Gilt für:</strong> sessions</li>
+<li><strong>Regel:</strong> Server-Logs (Empfehlung)</li>
+<li><strong>Frist:</strong> 7 Tage</li>
+<li><strong>Startereignis:</strong> Erhebung der Daten</li>
+<li><strong>Fristbeginn:</strong> Ab dem Startereignis</li>
+<li><strong>Rechtsgrundlage:</strong> Art. 5 Abs. 1 lit. e, Art. 6 Abs. 1 lit. f DSGVO</li>
+<li><strong>Endaktion:</strong> Löschen</li>
+<li><strong>Bei einem Löschantrag:</strong> Endaktion sofort</li>
+<li><strong>Verantwortliche Stelle:</strong> IT</li>
+<li><strong>Hinweis:</strong> Übliche Praxis für IP-Adressen in Webserver-Logs. An das IT-Sicherheitskonzept anpassen.</li>
+</ul>
+
+<h2>5. Umsetzung</h2>
+<h3>Löschung</h3>
+<p>Datensätze werden nach Fristablauf endgültig gelöscht, auch solche, die zuvor nur als gelöscht markiert waren (Soft Delete). Ein Datensatz wird erst gelöscht, wenn die von ihm abhängigen Datensätze entfernt sind. Zeilen von Tabellen ohne Model werden stapelweise gelöscht.</p>
+<h3>Anonymisierung</h3>
+<p>Datensätze mit der Endaktion „Anonymisieren“ behalten ihre Zeile, ihre personenbezogenen Daten werden aber einmalig entfernt. Danach werden sie nicht erneut verarbeitet.</p>
+<h3>Einschränkung der Verarbeitung</h3>
+<p>Eingeschränkte Datensätze (Art. 18 DSGVO, § 35 BDSG) sind für die normale Verarbeitung der Anwendung nicht sichtbar. Sie erhalten nach Fristablauf ihre Endaktion.</p>
+<h3>Löschanträge</h3>
+<p>Über einen Löschantrag (Art. 17 DSGVO) wird je Datensatz entschieden: Datensätze unter einer Aufbewahrungsanordnung bleiben erhalten; Datensätze, deren Frist noch nicht begonnen hat (z. B. laufender Vertrag), bleiben unangetastet und werden gemeldet; Datensätze, deren Regel die Aufbewahrung rechtfertigt, werden bis zum Fristablauf eingeschränkt; Datensätze mit abhängigen Datensätzen werden eingeschränkt, bis diese entfernt sind; alle übrigen erhalten sofort ihre Endaktion. Das Ergebnis kann für die Antwort an die betroffene Person verwendet werden.</p>
+<h3>Ausführung</h3>
+<p>Fällige Datensätze verarbeitet der Befehl retention:run, den die Anwendung regelmäßig ausführt. Fristen werden in der Zeitzone Europe/Berlin berechnet. Vor jedem Lauf werden alle Festlegungen geprüft; ist eine davon ungültig, wird nichts geändert. Der Befehl retention:audit meldet Models und Tabellen ohne Löschregel.</p>
+<h3>Löschprotokoll</h3>
+<p>Jede Löschung, Anonymisierung und Einschränkung wird als Nachweis protokolliert (Art. 5 Abs. 2 DSGVO): Datenart, Regel, Aktion, Auslöser, Zeitpunkt und eine gehashte Datensatz-ID. Der Hash ist mit einem Schlüssel gebildet: Ein bestimmter Datensatz lässt sich bei Bedarf nachweisen, die ID aber nicht aus dem Protokoll ablesen. Da der Verantwortliche den Schlüssel besitzt, sind die Einträge pseudonymisiert und bleiben personenbezogene Daten (Erwägungsgrund 26 DSGVO). Sie werden 3 Jahre aufbewahrt und dann gelöscht. Zeilen von Tabellen ohne Model werden nur als Anzahl protokolliert.</p>
+<h3>Aufbewahrungsanordnung (Legal Hold)</h3>
+<p>Solange eine Aufbewahrungsanordnung aktiv ist (z. B. laufendes Verfahren oder Betriebsprüfung), wird der Datensatz weder gelöscht noch anonymisiert. Eine Anordnung kann auch die von dem Datensatz abhängigen Datensätze schützen. Anordnungen nennen die Person, die sie erteilt hat; aufgehobene und abgelaufene Anordnungen werden nach 3 Jahre gelöscht.</p>
+
+<h2>6. Ausnahmen</h2>
+<p>Diese Models und Tabellen haben bewusst keine Aufbewahrungsregel.</p>
+<table>
+<thead>
+<tr><th>Model oder Tabelle</th><th>Begründung</th></tr>
+</thead>
+<tbody>
+<tr><td>ItsJustVita\Retention\Tests\Fixtures\Models\Note</td><td>Contains no personal data.</td></tr>
+<tr><td>migrations</td><td>Framework bookkeeping without personal data.</td></tr>
+</tbody>
+</table>
+
+<h2>7. Nicht erfasste Systeme</h2>
+<p>Die Anwendung sieht nur ihre eigene Datenbank. Andere Systeme müssen gesondert behandelt werden, insbesondere externe Dienste, Postfächer und Dateispeicher (Dateien werden nur entfernt, wenn die Anwendung das beim Löschen eines Datensatzes veranlasst). Backups: Gelöschte Daten bleiben in Backups, bis diese rotiert werden. Wird ein Backup eingespielt, muss der Löschlauf wiederholt werden, bevor die Daten erneut genutzt werden. Tragen Sie hier die Rotationsfristen ein.</p>
+
+</body>
+</html>

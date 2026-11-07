@@ -49,6 +49,14 @@ final readonly class Period
         return new self($iso, $months, $days, $seconds);
     }
 
+    /**
+     * A rough length in seconds, only for sorting periods.
+     */
+    public function approximateSeconds(): int
+    {
+        return $this->months * 2_629_746 + $this->days * 86_400 + $this->seconds;
+    }
+
     public function isTimeBased(): bool
     {
         return $this->seconds > 0;

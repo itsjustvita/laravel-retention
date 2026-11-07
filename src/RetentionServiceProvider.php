@@ -12,8 +12,10 @@ use InvalidArgumentException;
 use ItsJustVita\Retention\Calculation\RetentionCalculator;
 use ItsJustVita\Retention\Console\AuditCommand;
 use ItsJustVita\Retention\Console\DueCommand;
+use ItsJustVita\Retention\Console\GenerateCommand;
 use ItsJustVita\Retention\Console\RunCommand;
 use ItsJustVita\Retention\Database\RetentionColumns;
+use ItsJustVita\Retention\Document\GitInfo;
 use ItsJustVita\Retention\Events\RecordAnonymized;
 use ItsJustVita\Retention\Events\RecordDeleted;
 use ItsJustVita\Retention\Events\RecordRestricted;
@@ -61,6 +63,7 @@ class RetentionServiceProvider extends ServiceProvider
         $this->app->singleton(PolicyValidator::class);
         $this->app->singleton(StartColumn::class);
         $this->app->singleton(LogHasher::class);
+        $this->app->bind(GitInfo::class, static fn (Application $app): GitInfo => new GitInfo($app->basePath()));
     }
 
     public function boot(): void
@@ -68,6 +71,7 @@ class RetentionServiceProvider extends ServiceProvider
         RetentionColumns::registerMacros();
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'retention');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'retention');
 
         $this->app->make(Dispatcher::class)->listen(
             [RecordDeleted::class, RecordAnonymized::class, RecordRestricted::class, TableRowsDeleted::class],
@@ -83,6 +87,10 @@ class RetentionServiceProvider extends ServiceProvider
                 __DIR__.'/../lang' => $this->app->langPath('vendor/retention'),
             ], 'retention-translations');
 
+            $this->publishes([
+                __DIR__.'/../resources/views' => $this->app->resourcePath('views/vendor/retention'),
+            ], 'retention-views');
+
             $this->publishesMigrations([
                 __DIR__.'/../database/migrations' => database_path('migrations'),
             ], 'retention-migrations');
@@ -91,6 +99,7 @@ class RetentionServiceProvider extends ServiceProvider
                 RunCommand::class,
                 DueCommand::class,
                 AuditCommand::class,
+                GenerateCommand::class,
             ]);
         }
     }

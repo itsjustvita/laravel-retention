@@ -313,20 +313,20 @@ Because the controller holds the key, the hashed IDs are pseudonymised, not anon
 
 ## Generated deletion concept
 
-`php artisan retention:generate --format=md|html [--locale=en|de] [--output=path] [--as-of=YYYY-MM-DD]`. PDF only if an optional package is installed; otherwise a hint to print the HTML.
+`php artisan retention:generate --format=md|html|pdf [--locale=en|de] [--output=path] [--as-of=YYYY-MM-DD]`. Without `--output` the document is printed. `--format=pdf` needs `--output` and the optional package `barryvdh/laravel-dompdf`; otherwise the command fails with a hint to print the HTML. All policies are validated first; if one is invalid, no document is generated. Cover data and texts come from `retention.document` (`organisation`, `controller`, `data_protection_officer`, `version`, `purpose`, `systems_not_covered`; the last two as a string or an array by locale).
 
 Structure following DIN 66398:
 
-1. Cover page with organisation, controller, data protection officer (from config), version and as-of date. The as-of date is the date of the last Git commit (shown with its hash) if available, otherwise the generation date; `--as-of` overrides it.
+1. Cover page with organisation, controller, data protection officer (from config), version and as-of date. The as-of date is the date of the last Git commit in the retention timezone (shown with its hash) if available, otherwise the generation date; `--as-of` overrides it and leaves the hash out.
 2. Purpose and scope (boilerplate, overridable in config).
-3. Data categories: table with category, description, affected models/tables, deletion class, rule, legal basis, final action, erasure behaviour (blocking yes/no with ground), responsible unit.
+3. Data categories, one line per combination of category, rule, start event, final action and responsible unit: table with category, description, affected models/tables, deletion class, rule, legal basis, final action, erasure behaviour (blocking yes/no with ground), responsible unit.
 4. Deletion class matrix: rows are periods (ascending), columns are the start events (collection, end of transaction, end of relationship). Cells list the data categories; categories with end-of-year counting are marked.
 5. Detailed deletion rules per data category, including dependencies (`blockedBy`) and inherited holds.
 6. Implementation: how deletion, anonymisation, restriction and erasure requests work, execution schedule, deletion log (including its pseudonymisation and retention), legal hold.
 7. Exclusions: models and tables deliberately without policy, with justification.
 8. Systems not covered: free-text section from config (backups, external services, mailboxes), since the package only sees the app's database. A default note on backups is prefilled.
 
-Templates are publishable Blade views so layout and wording can be customised. The output must be deterministic: the same declarations and the same as-of date produce byte-identical output, and all lists are sorted by stable keys. This way the document can be meaningfully versioned and diffed.
+Templates are publishable Blade views (`--tag=retention-views`) and the wording is in translation files (`--tag=retention-translations`), so layout and wording can be customised. German legal wording of a shipped rule (`lang/de/rules.php`) is only used while the rule's value is unchanged, so an override in the config is never replaced by a translation; this also applies to the erasure reply. The output must be deterministic: the same declarations and the same as-of date produce byte-identical output, and all lists are sorted by stable keys. This way the document can be meaningfully versioned and diffed.
 
 ## Data model (migrations)
 

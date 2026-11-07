@@ -275,7 +275,7 @@ it('renders a reply for the data subject in English and German', function () {
         ->and($report->toMarkdown('de'))->toContain('# Ergebnis des Löschantrags')
         ->and($report->toMarkdown('de'))->toContain('Bearbeitet am 01.03.2026.')
         ->and($report->toMarkdown('de'))->toContain('- Gelöscht: 1 Datensatz.')
-        ->and($report->toMarkdown('de'))->toContain('- Eingeschränkt: 2 Datensätze. Wir müssen diese Daten bis zum 01.01.2034 aufbewahren (Art. 17 (3) (b) GDPR; § 35 (3) BDSG). Bis dahin sind sie für jede andere Verarbeitung gesperrt; danach werden sie gelöscht.');
+        ->and($report->toMarkdown('de'))->toContain('- Eingeschränkt: 2 Datensätze. Wir müssen diese Daten bis zum 01.01.2034 aufbewahren (Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG). Bis dahin sind sie für jede andere Verarbeitung gesperrt; danach werden sie gelöscht.');
 });
 
 it('marks a dry run in the reply', function () {

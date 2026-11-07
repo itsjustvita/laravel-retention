@@ -1,0 +1,152 @@
+# Deletion concept
+
+Structured according to DIN 66398
+
+| | |
+|---|---|
+| Organisation | Beispiel GmbH |
+| Controller | Beispiel GmbH, Musterstraße 1, 10115 Berlin |
+| Data protection officer | Erika Datenschutz, dsb@example.com |
+| Version | 1.2 |
+| As of | 2026-11-07 |
+
+## 1. Purpose and scope
+
+This deletion concept documents which personal data this application stores, how long it is kept, and how it is deleted, anonymised or restricted. It is generated from the same declarations the application enforces, so the document and the actual behaviour match. It covers the data in the application's database. It supports accountability under Art. 5 (2) GDPR and implements storage limitation under Art. 5 (1) (e) GDPR.
+
+## 2. Data categories
+
+| Data category | Models and tables | Deletion class | Rule | Legal basis | Final action | On an erasure request | Responsible unit |
+|---|---|---|---|---|---|---|---|
+| Customer master data | ItsJustVita\Retention\Tests\Fixtures\Models\Customer (customers) | 3 years, End of the relationship* | Contract data after the end of the contract | §§ 195, 199 (1) BGB | Anonymise | Restricted until the period expires (Art. 17 (3) (e) GDPR) | Sales |
+| Customer invoices | ItsJustVita\Retention\Tests\Fixtures\Models\Invoice (invoices) | 8 years, End of the transaction* | Accounting vouchers (e.g. invoices) | § 147 (1) no. 4, (3), (4) AO; § 257 (1) no. 4, (4), (5) HGB; § 14b (1) UStG | Delete | Restricted until the period expires (Art. 17 (3) (b) GDPR; § 35 (3) BDSG) | Accounting |
+| Orders | ItsJustVita\Retention\Tests\Fixtures\Models\Order (orders) | 3 years, End of the transaction* | Contract data after the end of the contract | §§ 195, 199 (1) BGB | Delete | Restricted until the period expires (Art. 17 (3) (e) GDPR) | Sales |
+| Web server logs | ItsJustVita\Retention\Tests\Fixtures\Models\ServerLog (server_logs) | 7 days, Collection of the data | Server logs | Art. 5 (1) (e), Art. 6 (1) (f) GDPR | Delete | Final action right away | IT |
+| User sessions | sessions | 7 days, Collection of the data | Server logs | Art. 5 (1) (e), Art. 6 (1) (f) GDPR | Delete | Final action right away | IT |
+
+## 3. Deletion class matrix
+
+Deletion classes combine the period with the event that starts it.
+
+| Period | Collection of the data | End of the transaction | End of the relationship |
+|---|---|---|---|
+| 7 days | User sessions, Web server logs |  |  |
+| 3 years |  | Orders* | Customer master data* |
+| 8 years |  | Customer invoices* |  |
+
+* Counted from the end of the calendar year in which the start event occurred.
+
+## 4. Deletion rules per data category
+
+### Customer master data
+
+- **Applies to:** ItsJustVita\Retention\Tests\Fixtures\Models\Customer (customers)
+- **Rule:** Contract data after the end of the contract (Statutory)
+- **Period:** 3 years
+- **Start event:** End of the relationship
+- **Counting:** From the end of the calendar year of the start event
+- **Legal basis:** §§ 195, 199 (1) BGB
+- **Final action:** Anonymise
+- **On an erasure request:** Restricted until the period expires (Art. 17 (3) (e) GDPR)
+- **Responsible unit:** Sales
+- **Note:** Regular limitation period. Not a retention duty: the data is kept to establish, exercise or defend legal claims.
+
+### Customer invoices
+
+- **Applies to:** ItsJustVita\Retention\Tests\Fixtures\Models\Invoice (invoices)
+- **Rule:** Accounting vouchers (e.g. invoices) (Statutory)
+- **Period:** 8 years
+- **Start event:** End of the transaction
+- **Counting:** From the end of the calendar year of the start event
+- **Legal basis:** § 147 (1) no. 4, (3), (4) AO; § 257 (1) no. 4, (4), (5) HGB; § 14b (1) UStG
+- **Final action:** Delete
+- **On an erasure request:** Restricted until the period expires (Art. 17 (3) (b) GDPR; § 35 (3) BDSG)
+- **Responsible unit:** Accounting
+- **Earlier versions:** Until 2025-01-01: 10 years
+- Legal holds inherited from: customer, order
+- **Note:** Reduced from 10 to 8 years by the Fourth Bureaucracy Relief Act (Bürokratieentlastungsgesetz IV, BEG IV) for all vouchers whose period had not expired by 2025-01-01. Certain supervised institutions (e.g. under KWG, VAG or WpIG) have a later transition date and must override valid_from.
+
+### Orders
+
+- **Applies to:** ItsJustVita\Retention\Tests\Fixtures\Models\Order (orders)
+- **Rule:** Contract data after the end of the contract (Statutory)
+- **Period:** 3 years
+- **Start event:** End of the transaction
+- **Counting:** From the end of the calendar year of the start event
+- **Legal basis:** §§ 195, 199 (1) BGB
+- **Final action:** Delete
+- **On an erasure request:** Restricted until the period expires (Art. 17 (3) (e) GDPR)
+- **Responsible unit:** Sales
+- Deleted only once these relations are empty: invoices
+- **Note:** Regular limitation period. Not a retention duty: the data is kept to establish, exercise or defend legal claims.
+
+### Web server logs
+
+- **Applies to:** ItsJustVita\Retention\Tests\Fixtures\Models\ServerLog (server_logs)
+- **Rule:** Server logs (Recommendation)
+- **Period:** 7 days
+- **Start event:** Collection of the data
+- **Counting:** From the start event
+- **Legal basis:** Art. 5 (1) (e), Art. 6 (1) (f) GDPR
+- **Final action:** Delete
+- **On an erasure request:** Final action right away
+- **Responsible unit:** IT
+- **Note:** Common practice for IP addresses in web server logs. Adjust to the IT security concept.
+
+### User sessions
+
+Login sessions of the web application.
+
+- **Applies to:** sessions
+- **Rule:** Server logs (Recommendation)
+- **Period:** 7 days
+- **Start event:** Collection of the data
+- **Counting:** From the start event
+- **Legal basis:** Art. 5 (1) (e), Art. 6 (1) (f) GDPR
+- **Final action:** Delete
+- **On an erasure request:** Final action right away
+- **Responsible unit:** IT
+- **Note:** Common practice for IP addresses in web server logs. Adjust to the IT security concept.
+
+## 5. Implementation
+
+### Deletion
+
+Records are deleted permanently once their period has expired, including records that were only soft-deleted before. A record is only deleted once the records that depend on it are gone. Rows of tables without a model are deleted in batches.
+
+### Anonymisation
+
+Records with the final action "anonymise" keep their row, but their personal data is removed once. Afterwards they are not processed again.
+
+### Restriction of processing
+
+Restricted records (Art. 18 GDPR, § 35 BDSG) are hidden from the normal processing of the application. They receive their final action when their period expires.
+
+### Erasure requests
+
+An erasure request (Art. 17 GDPR) is decided per record: records on legal hold are kept; records whose period has not started yet (e.g. an active contract) are left untouched and reported; records whose rule justifies keeping them are restricted until the period expires; records with dependent records are restricted until these are gone; all others receive their final action right away. The result can be used to reply to the data subject.
+
+### Execution
+
+Due records are processed by the command retention:run, which the application runs on a regular schedule. Periods are calculated in the timezone Europe/Berlin. Before every run, all declarations are validated; if any of them is invalid, nothing is changed. The command retention:audit reports models and tables without a deletion rule.
+
+### Deletion log
+
+Every deletion, anonymisation and restriction is logged as evidence (Art. 5 (2) GDPR): data category, rule, action, trigger, time and a hashed record ID. The hash is keyed, so a specific record can be verified on demand, but the ID cannot be read from the log. Because the controller holds the key, the entries are pseudonymised and remain personal data (Recital 26 GDPR). They are kept for 3 years and then deleted. Rows of tables without a model are logged only as a number of rows.
+
+### Legal hold
+
+While a legal hold is active (e.g. pending litigation or a tax audit), the record is neither deleted nor anonymised. A hold can also protect the records that depend on the held record. Holds name the person who placed them; released and expired holds are deleted after 3 years.
+
+## 6. Exclusions
+
+These models and tables deliberately have no retention rule.
+
+| Model or table | Justification |
+|---|---|
+| ItsJustVita\Retention\Tests\Fixtures\Models\Note | Contains no personal data. |
+| migrations | Framework bookkeeping without personal data. |
+
+## 7. Systems not covered
+
+The application only sees its own database. Other systems have to be covered separately, in particular external services, mailboxes and file storage (files are only removed if the application does so when a record is deleted). Backups: deleted data remains in backups until they are rotated. If a backup is restored, the deletion run has to be repeated before the data is used again. Describe the rotation periods here.

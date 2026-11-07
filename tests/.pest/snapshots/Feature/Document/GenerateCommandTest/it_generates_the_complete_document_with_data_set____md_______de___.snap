@@ -1,0 +1,152 @@
+# Löschkonzept
+
+Aufgebaut nach DIN 66398
+
+| | |
+|---|---|
+| Organisation | Beispiel GmbH |
+| Verantwortlicher | Beispiel GmbH, Musterstraße 1, 10115 Berlin |
+| Datenschutzbeauftragte Person | Erika Datenschutz, dsb@example.com |
+| Version | 1.2 |
+| Stand | 07.11.2026 |
+
+## 1. Zweck und Geltungsbereich
+
+Dieses Löschkonzept dokumentiert, welche personenbezogenen Daten diese Anwendung speichert, wie lange sie aufbewahrt werden und wie sie gelöscht, anonymisiert oder eingeschränkt werden. Es wird aus denselben Festlegungen erzeugt, die die Anwendung durchsetzt, sodass Dokument und tatsächliches Verhalten übereinstimmen. Es umfasst die Daten in der Datenbank der Anwendung. Es dient der Rechenschaftspflicht nach Art. 5 Abs. 2 DSGVO und setzt die Speicherbegrenzung nach Art. 5 Abs. 1 lit. e DSGVO um.
+
+## 2. Datenarten
+
+| Datenart | Models und Tabellen | Löschklasse | Regel | Rechtsgrundlage | Endaktion | Bei einem Löschantrag | Verantwortliche Stelle |
+|---|---|---|---|---|---|---|---|
+| Customer master data | ItsJustVita\Retention\Tests\Fixtures\Models\Customer (customers) | 3 Jahre, Ende der Beziehung* | Vertragsdaten nach Vertragsende | §§ 195, 199 Abs. 1 BGB | Anonymisieren | Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. e DSGVO) | Sales |
+| Customer invoices | ItsJustVita\Retention\Tests\Fixtures\Models\Invoice (invoices) | 8 Jahre, Ende des Vorgangs* | Buchungsbelege (z. B. Rechnungen) | § 147 Abs. 1 Nr. 4, Abs. 3, 4 AO; § 257 Abs. 1 Nr. 4, Abs. 4, 5 HGB; § 14b Abs. 1 UStG | Löschen | Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG) | Accounting |
+| Orders | ItsJustVita\Retention\Tests\Fixtures\Models\Order (orders) | 3 Jahre, Ende des Vorgangs* | Vertragsdaten nach Vertragsende | §§ 195, 199 Abs. 1 BGB | Löschen | Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. e DSGVO) | Sales |
+| Web server logs | ItsJustVita\Retention\Tests\Fixtures\Models\ServerLog (server_logs) | 7 Tage, Erhebung der Daten | Server-Logs | Art. 5 Abs. 1 lit. e, Art. 6 Abs. 1 lit. f DSGVO | Löschen | Endaktion sofort | IT |
+| User sessions | sessions | 7 Tage, Erhebung der Daten | Server-Logs | Art. 5 Abs. 1 lit. e, Art. 6 Abs. 1 lit. f DSGVO | Löschen | Endaktion sofort | IT |
+
+## 3. Löschklassen-Matrix
+
+Löschklassen verbinden die Frist mit dem Ereignis, das sie auslöst.
+
+| Frist | Erhebung der Daten | Ende des Vorgangs | Ende der Beziehung |
+|---|---|---|---|
+| 7 Tage | User sessions, Web server logs |  |  |
+| 3 Jahre |  | Orders* | Customer master data* |
+| 8 Jahre |  | Customer invoices* |  |
+
+* Fristbeginn am Ende des Kalenderjahres, in dem das Startereignis eingetreten ist.
+
+## 4. Löschregeln je Datenart
+
+### Customer master data
+
+- **Gilt für:** ItsJustVita\Retention\Tests\Fixtures\Models\Customer (customers)
+- **Regel:** Vertragsdaten nach Vertragsende (Gesetzlich)
+- **Frist:** 3 Jahre
+- **Startereignis:** Ende der Beziehung
+- **Fristbeginn:** Ab Ende des Kalenderjahres des Startereignisses
+- **Rechtsgrundlage:** §§ 195, 199 Abs. 1 BGB
+- **Endaktion:** Anonymisieren
+- **Bei einem Löschantrag:** Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. e DSGVO)
+- **Verantwortliche Stelle:** Sales
+- **Hinweis:** Regelmäßige Verjährungsfrist. Keine Aufbewahrungspflicht: Die Daten werden zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen aufbewahrt.
+
+### Customer invoices
+
+- **Gilt für:** ItsJustVita\Retention\Tests\Fixtures\Models\Invoice (invoices)
+- **Regel:** Buchungsbelege (z. B. Rechnungen) (Gesetzlich)
+- **Frist:** 8 Jahre
+- **Startereignis:** Ende des Vorgangs
+- **Fristbeginn:** Ab Ende des Kalenderjahres des Startereignisses
+- **Rechtsgrundlage:** § 147 Abs. 1 Nr. 4, Abs. 3, 4 AO; § 257 Abs. 1 Nr. 4, Abs. 4, 5 HGB; § 14b Abs. 1 UStG
+- **Endaktion:** Löschen
+- **Bei einem Löschantrag:** Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG)
+- **Verantwortliche Stelle:** Accounting
+- **Frühere Fassungen:** Bis 01.01.2025: 10 Jahre
+- Aufbewahrungsanordnungen geerbt von: customer, order
+- **Hinweis:** Durch das Bürokratieentlastungsgesetz IV (BEG IV) von 10 auf 8 Jahre verkürzt, für alle Belege, deren Frist am 01.01.2025 noch nicht abgelaufen war. Bestimmte beaufsichtigte Institute (z. B. nach KWG, VAG oder WpIG) haben einen späteren Stichtag und müssen valid_from überschreiben.
+
+### Orders
+
+- **Gilt für:** ItsJustVita\Retention\Tests\Fixtures\Models\Order (orders)
+- **Regel:** Vertragsdaten nach Vertragsende (Gesetzlich)
+- **Frist:** 3 Jahre
+- **Startereignis:** Ende des Vorgangs
+- **Fristbeginn:** Ab Ende des Kalenderjahres des Startereignisses
+- **Rechtsgrundlage:** §§ 195, 199 Abs. 1 BGB
+- **Endaktion:** Löschen
+- **Bei einem Löschantrag:** Einschränkung bis Fristablauf (Art. 17 Abs. 3 lit. e DSGVO)
+- **Verantwortliche Stelle:** Sales
+- Löschung erst, wenn diese Relationen leer sind: invoices
+- **Hinweis:** Regelmäßige Verjährungsfrist. Keine Aufbewahrungspflicht: Die Daten werden zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen aufbewahrt.
+
+### Web server logs
+
+- **Gilt für:** ItsJustVita\Retention\Tests\Fixtures\Models\ServerLog (server_logs)
+- **Regel:** Server-Logs (Empfehlung)
+- **Frist:** 7 Tage
+- **Startereignis:** Erhebung der Daten
+- **Fristbeginn:** Ab dem Startereignis
+- **Rechtsgrundlage:** Art. 5 Abs. 1 lit. e, Art. 6 Abs. 1 lit. f DSGVO
+- **Endaktion:** Löschen
+- **Bei einem Löschantrag:** Endaktion sofort
+- **Verantwortliche Stelle:** IT
+- **Hinweis:** Übliche Praxis für IP-Adressen in Webserver-Logs. An das IT-Sicherheitskonzept anpassen.
+
+### User sessions
+
+Login sessions of the web application.
+
+- **Gilt für:** sessions
+- **Regel:** Server-Logs (Empfehlung)
+- **Frist:** 7 Tage
+- **Startereignis:** Erhebung der Daten
+- **Fristbeginn:** Ab dem Startereignis
+- **Rechtsgrundlage:** Art. 5 Abs. 1 lit. e, Art. 6 Abs. 1 lit. f DSGVO
+- **Endaktion:** Löschen
+- **Bei einem Löschantrag:** Endaktion sofort
+- **Verantwortliche Stelle:** IT
+- **Hinweis:** Übliche Praxis für IP-Adressen in Webserver-Logs. An das IT-Sicherheitskonzept anpassen.
+
+## 5. Umsetzung
+
+### Löschung
+
+Datensätze werden nach Fristablauf endgültig gelöscht, auch solche, die zuvor nur als gelöscht markiert waren (Soft Delete). Ein Datensatz wird erst gelöscht, wenn die von ihm abhängigen Datensätze entfernt sind. Zeilen von Tabellen ohne Model werden stapelweise gelöscht.
+
+### Anonymisierung
+
+Datensätze mit der Endaktion „Anonymisieren“ behalten ihre Zeile, ihre personenbezogenen Daten werden aber einmalig entfernt. Danach werden sie nicht erneut verarbeitet.
+
+### Einschränkung der Verarbeitung
+
+Eingeschränkte Datensätze (Art. 18 DSGVO, § 35 BDSG) sind für die normale Verarbeitung der Anwendung nicht sichtbar. Sie erhalten nach Fristablauf ihre Endaktion.
+
+### Löschanträge
+
+Über einen Löschantrag (Art. 17 DSGVO) wird je Datensatz entschieden: Datensätze unter einer Aufbewahrungsanordnung bleiben erhalten; Datensätze, deren Frist noch nicht begonnen hat (z. B. laufender Vertrag), bleiben unangetastet und werden gemeldet; Datensätze, deren Regel die Aufbewahrung rechtfertigt, werden bis zum Fristablauf eingeschränkt; Datensätze mit abhängigen Datensätzen werden eingeschränkt, bis diese entfernt sind; alle übrigen erhalten sofort ihre Endaktion. Das Ergebnis kann für die Antwort an die betroffene Person verwendet werden.
+
+### Ausführung
+
+Fällige Datensätze verarbeitet der Befehl retention:run, den die Anwendung regelmäßig ausführt. Fristen werden in der Zeitzone Europe/Berlin berechnet. Vor jedem Lauf werden alle Festlegungen geprüft; ist eine davon ungültig, wird nichts geändert. Der Befehl retention:audit meldet Models und Tabellen ohne Löschregel.
+
+### Löschprotokoll
+
+Jede Löschung, Anonymisierung und Einschränkung wird als Nachweis protokolliert (Art. 5 Abs. 2 DSGVO): Datenart, Regel, Aktion, Auslöser, Zeitpunkt und eine gehashte Datensatz-ID. Der Hash ist mit einem Schlüssel gebildet: Ein bestimmter Datensatz lässt sich bei Bedarf nachweisen, die ID aber nicht aus dem Protokoll ablesen. Da der Verantwortliche den Schlüssel besitzt, sind die Einträge pseudonymisiert und bleiben personenbezogene Daten (Erwägungsgrund 26 DSGVO). Sie werden 3 Jahre aufbewahrt und dann gelöscht. Zeilen von Tabellen ohne Model werden nur als Anzahl protokolliert.
+
+### Aufbewahrungsanordnung (Legal Hold)
+
+Solange eine Aufbewahrungsanordnung aktiv ist (z. B. laufendes Verfahren oder Betriebsprüfung), wird der Datensatz weder gelöscht noch anonymisiert. Eine Anordnung kann auch die von dem Datensatz abhängigen Datensätze schützen. Anordnungen nennen die Person, die sie erteilt hat; aufgehobene und abgelaufene Anordnungen werden nach 3 Jahre gelöscht.
+
+## 6. Ausnahmen
+
+Diese Models und Tabellen haben bewusst keine Aufbewahrungsregel.
+
+| Model oder Tabelle | Begründung |
+|---|---|
+| ItsJustVita\Retention\Tests\Fixtures\Models\Note | Contains no personal data. |
+| migrations | Framework bookkeeping without personal data. |
+
+## 7. Nicht erfasste Systeme
+
+Die Anwendung sieht nur ihre eigene Datenbank. Andere Systeme müssen gesondert behandelt werden, insbesondere externe Dienste, Postfächer und Dateispeicher (Dateien werden nur entfernt, wenn die Anwendung das beim Löschen eines Datensatzes veranlasst). Backups: Gelöschte Daten bleiben in Backups, bis diese rotiert werden. Wird ein Backup eingespielt, muss der Löschlauf wiederholt werden, bevor die Daten erneut genutzt werden. Tragen Sie hier die Rotationsfristen ein.
