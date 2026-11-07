@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use ItsJustVita\Retention\Attributes\Retention;
 use ItsJustVita\Retention\Enums\Action;
 use ItsJustVita\Retention\Enums\ErasureBeforeStart;
 use ItsJustVita\Retention\Enums\StartEvent;
@@ -68,3 +69,28 @@ it('rejects unknown enum values', function (Closure $declare, string $message) {
     'start event' => [fn (RetentionPolicy $p) => $p->startsAt('logged_at', 'created'), 'unknown start event [created]; expected one of [collection, end_of_transaction, end_of_relationship]'],
     'erasure behaviour' => [fn (RetentionPolicy $p) => $p->onErasureBeforeStart('delete'), 'unknown erasure behaviour [delete]; expected one of [skip, apply]'],
 ]);
+
+it('builds the same policy from the attribute, including the optional parts', function () {
+    $policy = (new Retention(
+        category: 'customer_master_data',
+        label: 'Customer master data',
+        rule: 'bgb_limitation_period',
+        startsAt: 'contract_ended_at',
+        startEvent: StartEvent::EndOfRelationship,
+        action: 'anonymize',
+        responsible: 'Sales',
+        anonymizer: CustomerAnonymizer::class,
+        blockedBy: ['orders'],
+        inheritsHoldsFrom: ['account'],
+        onErasureBeforeStart: 'apply',
+        description: 'Names and contact details.',
+    ))->toPolicy();
+
+    expect($policy->category)->toBe('customer_master_data')
+        ->and($policy->finalAction)->toBe(Action::Anonymize)
+        ->and($policy->anonymizer)->toBe(CustomerAnonymizer::class)
+        ->and($policy->blockingRelations)->toBe(['orders'])
+        ->and($policy->holdRelations)->toBe(['account'])
+        ->and($policy->erasureBeforeStart)->toBe(ErasureBeforeStart::Apply)
+        ->and($policy->description)->toBe('Names and contact details.');
+});

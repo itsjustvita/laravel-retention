@@ -72,7 +72,7 @@ Rules to ship (verify contents against current law before release; every rule ca
 | `consent_proof` | 3 years | end of year | yes, Art. 17 (3) (e) | Proof of consent, Art. 7 (1) GDPR, `type: recommendation` |
 | `uwg_telephone_advertising_consent` | 5 years | event | yes, Art. 17 (3) (b) | § 7a UWG (from consent and again after each use) |
 
-**Before release:** verify every shipped rule against current law and set its `as_of` date. Until then the shipped rules carry no `as_of`.
+**Before release:** verify every shipped rule against current law and set its `as_of` date. Until then the shipped rules carry no `as_of`. Also have the texts in `lang/` reviewed (reply to data subjects, document boilerplate, German legal wording in `lang/de/rules.php`).
 
 The README must state clearly that the catalogue is not legal advice and has to be reviewed by the controller.
 
