@@ -34,7 +34,7 @@ PHP 8.4+, Laravel 13. Tests with Pest and Orchestra Testbench, time control via 
 
 ## Rule catalogue
 
-Shipped catalogue in `config/retention.php` (publishable). Each rule is a keyed entry that can be overridden or extended. Structure:
+The shipped catalogue lives in the package (`ShippedRules`), not in the published config, so corrected legal content reaches every installation with a package update and shows up as a diff in the generated document. `config('retention.rules')` overrides or extends it key by key: an override only lists the keys it changes (e.g. `['ao_accounting_voucher' => ['valid_from' => '2026-01-01']]`), `null` removes an optional key, and a new key adds a custom rule. Structure of a rule:
 
 ```php
 'rules' => [
@@ -49,10 +49,13 @@ Shipped catalogue in `config/retention.php` (publishable). Each rule is a keyed 
         'valid_from' => '2025-01-01',
         'previous' => ['period' => 'P10Y'],
         'note' => 'Reduced from 10 to 8 years by the Fourth Bureaucracy Relief Act (Bürokratieentlastungsgesetz IV, BEG IV).',
+        'as_of' => '2026-11-07',             // date the legal content was last verified (optional)
     ],
     // ...
 ],
 ```
+
+Unknown keys are rejected, so typos fail loudly instead of being ignored.
 
 `blocks_erasure` is set explicitly on every rule and is deliberately not derived from `type`. The BGB limitation period is not a retention duty but still justifies keeping data for the defence of legal claims (Art. 17 (3) (e) GDPR), whereas a recommendation such as the server log period does not justify refusing erasure. `erasure_ground` is rendered in the document and in the erasure report.
 
@@ -67,6 +70,9 @@ Rules to ship (verify contents against current law before release; every rule ca
 | `rejected_application` | 6 months | event | yes, Art. 17 (3) (e) | Recommendation based on § 15 (4) AGG, § 61b ArbGG, `type: recommendation` |
 | `server_logs` | 7 days | event | no | Recommendation, `type: recommendation` |
 | `consent_proof` | 3 years | end of year | yes, Art. 17 (3) (e) | Proof of consent, Art. 7 (1) GDPR, `type: recommendation` |
+| `uwg_telephone_advertising_consent` | 5 years | event | yes, Art. 17 (3) (b) | § 7a UWG (from consent and again after each use) |
+
+**Before release:** verify every shipped rule against current law and set its `as_of` date. Until then the shipped rules carry no `as_of`.
 
 The README must state clearly that the catalogue is not legal advice and has to be reviewed by the controller.
 
@@ -87,12 +93,18 @@ This matches BEG IV, which applies to all records whose period had not yet expir
 
 With `end_of_year`, the period starts at the end of the calendar year in which the start event occurred (§ 147 (4) AO, § 257 (5) HGB, § 199 (1) BGB). Example: invoice dated 2025-03-15, 8 years, period starts 2025-12-31, deletable from 2034-01-01.
 
+Periods are ISO 8601 durations and are either date-based (`P8Y`, `P6M`, `P7D`) or time-based (`PT72H`), never mixed:
+
+- **Date-based, `event` counting:** calendar days per §§ 187 (1), 188 (2), (3) BGB. The day of the event does not count; the period ends at the end of the corresponding day; a missing month-end day falls back to the last day of the month. Example: rejection on 2025-03-15, 6 months, deletable from 2025-09-16 00:00. Event on 2025-01-31, 1 month, deletable from 2025-03-01.
+- **Date-based, `end_of_year` counting:** the period runs from 1 January of the following year; deletable from that date plus the period.
+- **Time-based:** exact, e.g. 72 real hours across a daylight saving change. Only allowed with `event` counting.
+
 All calculations run in `config('retention.timezone')` (default: `app.timezone`). "End of the calendar year" means 31 December, 24:00, in that timezone. Datetime columns are converted from the database timezone first, date columns are taken as calendar dates, integer columns are treated as Unix timestamps (e.g. `sessions.last_activity`).
 
 The calculation lives in its own thoroughly tested class `RetentionCalculator`, which works in both directions:
 
 - `expiresAt(event, rule, now)`: the instant from which a record is deletable.
-- `dueConstraint(rule, now)`: the inverse, a constraint on the start column (`start_column < cutoff`, or two cutoffs combined with OR during a transition). `retention:run` and `retention:due` use it to select due records in SQL instead of evaluating every row in PHP. `retention:due` calls it with `now + 30 days` for the forecast column.
+- `dueConstraint(rule, now)`: the inverse, a single cutoff on the start column (`start_column < cutoff`, or `<=` for time-based periods). Because expiry never decreases with a later start event, the due records always form such a prefix, also across transitions (the union of two prefixes is the larger one). `retention:run` and `retention:due` use it to select due records in SQL instead of evaluating every row in PHP. `retention:due` calls it with `now + 30 days` for the forecast column.
 
 Both directions must agree: for every E and N, `expiresAt(E) <= N` holds exactly when E satisfies `dueConstraint(N)`. This equivalence is tested over generated dates.
 
