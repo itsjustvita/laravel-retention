@@ -148,7 +148,7 @@ class Customer extends Model
 }
 ```
 
-`action()` is required and has no default, because the document must show an explicit decision for every data category.
+`action()` and `responsible()` are required and have no default, because the document must show an explicit decision and an owner for every data category. `description()` is optional and appears in the document. The column names `restricted_at` and `anonymized_at` are fixed in v1.
 
 If the start column is `null`, no period is running (e.g. contract still active).
 
@@ -156,19 +156,21 @@ As an alternative to the method, configuration via a PHP attribute `#[Retention(
 
 ### Policy validation
 
-`RetentionPolicy::validate()` checks:
+`PolicyValidator` returns all violations of a model's policy at once (`violations()`), or throws `InvalidRetentionPolicy` with all of them (`validate()`). It checks:
 
-- the rule key exists;
+- rule, start column, action and responsible unit are set, and the rule key exists;
 - the start column exists on the table;
-- an anonymiser is set for `anonymize`;
+- an anonymiser is set for `anonymize` and resolves (closure, invokable class, or method of the model);
 - the required columns exist (`anonymized_at` for `anonymize`, `restricted_at` for blocking rules);
-- relations named in `blockedBy()` and `inheritsHoldsFrom()` exist, and `blockedBy()` has no cycles.
+- relations named in `blockedBy()` and `inheritsHoldsFrom()` exist and are Eloquent relations;
+- `blockedBy()` is only used with `delete`, and has no cycles (followed through the related models' policies);
+- errors thrown while building the policy (e.g. an unknown action string) are reported as violations, not thrown.
 
 Validation runs at three points:
 
 - in `retention:audit` (CI);
 - before `retention:run`, `retention:due` and `retention:generate` change or output anything (fail fast, no partial run);
-- in the app's own tests through the shipped Pest expectation `expect(Invoice::class)->toHaveValidRetentionPolicy()`.
+- in the app's own tests through the shipped Pest expectation `expect(Invoice::class)->toHaveValidRetentionPolicy()`. The package registers it as a Pest plugin (`extra.pest.plugins`), so no setup is needed; PHPUnit users call `PolicyValidator::validate()`.
 
 Column checks need a migrated database.
 
@@ -318,6 +320,7 @@ Templates are publishable Blade views so layout and wording can be customised. T
 - `retention_log` (see Deletion log).
 - Blueprint macro `restrictable()`: adds `restricted_at` (timestamp, nullable, indexed). Required on tables whose policy uses a blocking rule.
 - Blueprint macro `anonymizable()`: adds `anonymized_at` (timestamp, nullable, indexed). Required on tables whose policy uses `anonymize`.
+- `dropRestrictable()` and `dropAnonymizable()` remove the column and its index again (for `down()` migrations).
 
 The deletion date of a restricted record is not stored. It is always computed from the start column and the rule currently in force, so a rule change such as BEG IV cannot leave stale dates behind.
 

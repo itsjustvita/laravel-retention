@@ -60,6 +60,11 @@
             "providers": [
                 "ItsJustVita\\Retention\\RetentionServiceProvider"
             ]
+        },
+        "pest": {
+            "plugins": [
+                "ItsJustVita\\Retention\\Testing\\PestPlugin"
+            ]
         }
     },
     "minimum-stability": "stable",

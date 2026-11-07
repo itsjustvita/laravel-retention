@@ -9,6 +9,9 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use ItsJustVita\Retention\Calculation\RetentionCalculator;
+use ItsJustVita\Retention\Database\RetentionColumns;
+use ItsJustVita\Retention\Policies\PolicyRegistry;
+use ItsJustVita\Retention\Policies\PolicyValidator;
 use ItsJustVita\Retention\Rules\RuleCatalogue;
 use ItsJustVita\Retention\Rules\ShippedRules;
 
@@ -42,10 +45,15 @@ class RetentionServiceProvider extends ServiceProvider
 
             return new RetentionCalculator($timezone);
         });
+
+        $this->app->singleton(PolicyRegistry::class);
+        $this->app->singleton(PolicyValidator::class);
     }
 
     public function boot(): void
     {
+        RetentionColumns::registerMacros();
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/retention.php' => config_path('retention.php'),

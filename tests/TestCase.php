@@ -18,4 +18,9 @@ abstract class TestCase extends Orchestra
     {
         return [RetentionServiceProvider::class];
     }
+
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/Fixtures/migrations');
+    }
 }
