@@ -144,6 +144,18 @@ it('describes dependencies, inherited holds and rule transitions', function () {
         ->toContain('Reduced from 10 to 8 years');
 });
 
+it('warns about the suspension of expiry and names the exception for institutions', function () {
+    expect(generate(['--format' => 'md', '--locale' => 'en']))
+        ->toContain('§ 147 (3) AO')
+        ->toContain('Art. 97 § 19a (3) EGAO')
+        ->not->toContain('later transition date');
+
+    expect(generate(['--format' => 'md', '--locale' => 'de']))
+        ->toContain('§ 147 Abs. 3 AO')
+        ->toContain('Art. 97 § 19a Abs. 3 EGAO')
+        ->not->toContain('späteren Stichtag');
+});
+
 it('lists exclusions with their justification', function () {
     expect(generate(['--format' => 'md', '--locale' => 'en']))
         ->toContain('| '.Note::class.' | Contains no personal data. |')

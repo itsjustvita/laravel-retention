@@ -34,7 +34,7 @@ PHP 8.4+, Laravel 13. Tests with Pest and Orchestra Testbench, time control via 
 
 ## Rule catalogue
 
-The shipped catalogue lives in the package (`ShippedRules`), not in the published config, so corrected legal content reaches every installation with a package update and shows up as a diff in the generated document. `config('retention.rules')` overrides or extends it key by key: an override only lists the keys it changes (e.g. `['ao_accounting_voucher' => ['valid_from' => '2026-01-01']]`), `null` removes an optional key, and a new key adds a custom rule. Structure of a rule:
+The shipped catalogue lives in the package (`ShippedRules`), not in the published config, so corrected legal content reaches every installation with a package update and shows up as a diff in the generated document. `config('retention.rules')` overrides or extends it key by key: an override only lists the keys it changes (e.g. `['server_logs' => ['period' => 'P14D']]`), `null` removes an optional key, and a new key adds a custom rule. Structure of a rule:
 
 ```php
 'rules' => [
@@ -57,7 +57,7 @@ The shipped catalogue lives in the package (`ShippedRules`), not in the publishe
 
 Unknown keys are rejected, so typos fail loudly instead of being ignored.
 
-`blocks_erasure` is set explicitly on every rule and is deliberately not derived from `type`. The BGB limitation period is not a retention duty but still justifies keeping data for the defence of legal claims (Art. 17 (3) (e) GDPR), whereas a recommendation such as the server log period does not justify refusing erasure. `erasure_ground` is rendered in the document and in the erasure report.
+`blocks_erasure` is set explicitly on every rule and is deliberately not derived from `type`. The BGB limitation period is not a retention duty but still justifies keeping data for the defence of legal claims (Art. 17 (3) (e) GDPR), whereas a recommendation such as the server log period does not justify refusing erasure. `erasure_ground` is rendered in the document and in the erasure report. The optional `erasure_reason` (`legal_duty` or `legal_claims`) decides the wording of the reply to the data subject, because a limitation period is no duty to keep; without it the sentence is neutral.
 
 Rules to ship (verify contents against current law before release; every rule carries `legal_basis` and an as-of date):
 
@@ -78,14 +78,14 @@ The README must state clearly that the catalogue is not legal advice and has to 
 
 ### Rule changes over time (`valid_from`, `previous`)
 
-Transitional rules are not hard-coded (e.g. BEG IV applies to records whose period had not expired by 2025-01-01; certain supervised institutions have different transition dates). Instead every rule has `valid_from` and an optional `previous` (any subset of rule keys, typically `period`) so users can configure transitions themselves.
+Transitional rules are not hard-coded (e.g. BEG IV applies to records whose period had not expired by 2024-12-31). Instead every rule has `valid_from` and an optional `previous` (any subset of rule keys, typically `period`) so users can configure transitions themselves.
 
 The rule version is chosen by the **evaluation date**, not by the date of the start event. For evaluation date N and a record with start event E:
 
 - N before `valid_from`: `previous` applies.
 - N on or after `valid_from`: if the record had already expired under `previous` before `valid_from`, it stays expired. Otherwise the current version applies.
 
-This matches BEG IV, which applies to all records whose period had not yet expired on 2025-01-01. On that day, vouchers from 2015 and 2016 became deletable at once. Supervised institutions with a later transition date configure their own `valid_from`.
+This matches BEG IV, which applies to all records whose period had not yet expired on 2025-01-01. On that day, vouchers from 2015 and 2016 became deletable at once. Institutions under the KWG, insurers under the VAG and securities institutions under the WpIG are excepted and keep 10 years (Art. 97 § 19a (3) EGAO, § 257 (4) HGB); they override the rule with `period` `P10Y` and without `valid_from` and `previous`.
 
 > **Decision D2:** evaluation date, as above. The alternative, event date (the new version applies only to records whose start event is on or after `valid_from`), is simpler but gets BEG IV wrong: it would keep vouchers from 2015–2024 for 10 years. A per-rule switch `transition: evaluation_date|event_date` is deferred until a concrete law needs event-date semantics.
 
@@ -254,7 +254,7 @@ All records are processed in one transaction, so a failing action rolls the whol
 
 ## Legal hold
 
-Polymorphic table `retention_holds` (holdable_type, holdable_id, reason, until nullable, created_by nullable, released_at nullable, timestamps). A hold is active while `released_at` is null and `until` is null or in the future; it expires by itself at `until`. While an active hold exists, the record is never deleted or anonymised. Use cases are pending litigation, tax audits, or the suspension of expiry under § 147 (3) sentence 5 AO.
+Polymorphic table `retention_holds` (holdable_type, holdable_id, reason, until nullable, created_by nullable, released_at nullable, timestamps). A hold is active while `released_at` is null and `until` is null or in the future; it expires by itself at `until`. While an active hold exists, the record is never deleted or anonymised. Use cases are pending litigation, tax audits, or the suspension of expiry under § 147 (3) sentence 5 AO. `retention:run` cannot detect that suspension by itself, so the rule notes, the README and the document say that a hold has to be placed for it.
 
 API: `$invoice->placeHold('Tax audit 2026', until: ...)`, `->releaseHold()`, `->isOnHold()`.
 

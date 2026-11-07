@@ -26,9 +26,10 @@ final class ShippedRules
                 'type' => 'legal',
                 'blocks_erasure' => true,
                 'erasure_ground' => 'Art. 17 (3) (b) GDPR; § 35 (3) BDSG',
+                'erasure_reason' => 'legal_duty',
                 'valid_from' => '2025-01-01',
                 'previous' => ['period' => 'P10Y'],
-                'note' => 'Reduced from 10 to 8 years by the Fourth Bureaucracy Relief Act (Bürokratieentlastungsgesetz IV, BEG IV) for all vouchers whose period had not expired by 2025-01-01. Certain supervised institutions (e.g. under KWG, VAG or WpIG) have a later transition date and must override valid_from.',
+                'note' => 'Reduced from 10 to 8 years by the Fourth Bureaucracy Relief Act (Bürokratieentlastungsgesetz IV, BEG IV) for all vouchers whose period had not expired by 2024-12-31. Institutions under the KWG, insurers under the VAG and securities institutions under the WpIG keep 10 years (Art. 97 § 19a (3) EGAO; § 257 (4) HGB) and must override this rule. The period does not expire while the records matter for taxes whose assessment period is still open (§ 147 (3) AO). The automatic deletion does not detect this; place a legal hold in such cases.',
             ],
 
             'ao_books_financial_statements' => [
@@ -39,6 +40,8 @@ final class ShippedRules
                 'type' => 'legal',
                 'blocks_erasure' => true,
                 'erasure_ground' => 'Art. 17 (3) (b) GDPR; § 35 (3) BDSG',
+                'erasure_reason' => 'legal_duty',
+                'note' => 'The period does not expire while the records matter for taxes whose assessment period is still open (§ 147 (3) AO). The automatic deletion does not detect this; place a legal hold in such cases.',
             ],
 
             'ao_business_correspondence' => [
@@ -49,6 +52,8 @@ final class ShippedRules
                 'type' => 'legal',
                 'blocks_erasure' => true,
                 'erasure_ground' => 'Art. 17 (3) (b) GDPR; § 35 (3) BDSG',
+                'erasure_reason' => 'legal_duty',
+                'note' => 'The period does not expire while the records matter for taxes whose assessment period is still open (§ 147 (3) AO). The automatic deletion does not detect this; place a legal hold in such cases.',
             ],
 
             'bgb_limitation_period' => [
@@ -59,6 +64,7 @@ final class ShippedRules
                 'type' => 'legal',
                 'blocks_erasure' => true,
                 'erasure_ground' => 'Art. 17 (3) (e) GDPR',
+                'erasure_reason' => 'legal_claims',
                 'note' => 'Regular limitation period. Not a retention duty: the data is kept to establish, exercise or defend legal claims.',
             ],
 
@@ -70,6 +76,7 @@ final class ShippedRules
                 'type' => 'recommendation',
                 'blocks_erasure' => true,
                 'erasure_ground' => 'Art. 17 (3) (e) GDPR',
+                'erasure_reason' => 'legal_claims',
                 'note' => 'Two months to assert claims under § 15 (4) AGG plus three months to sue under § 61b (1) ArbGG, plus a buffer. Use the date of the rejection as the start event.',
             ],
 
@@ -91,6 +98,7 @@ final class ShippedRules
                 'type' => 'recommendation',
                 'blocks_erasure' => true,
                 'erasure_ground' => 'Art. 17 (3) (e) GDPR',
+                'erasure_reason' => 'legal_claims',
                 'note' => 'Kept for the regular limitation period after the consent ended (withdrawal or end of processing).',
             ],
 
@@ -102,6 +110,7 @@ final class ShippedRules
                 'type' => 'legal',
                 'blocks_erasure' => true,
                 'erasure_ground' => 'Art. 17 (3) (b) GDPR',
+                'erasure_reason' => 'legal_duty',
                 'note' => 'Kept for five years from when consent was given and again after each use. Use the date of the last use as the start event.',
             ],
         ];

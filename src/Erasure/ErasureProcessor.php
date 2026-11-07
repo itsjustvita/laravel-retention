@@ -113,6 +113,7 @@ final readonly class ErasureProcessor
             waitsForDependents: $waitsForDependents,
             erasureGround: $status === ErasureStatus::Restricted ? $rule->erasureGround : null,
             ruleKey: $rule->key,
+            erasureReason: $status === ErasureStatus::Restricted ? $rule->erasureReason : null,
         );
 
         if ($this->holds->isHeld($record, $now)) {

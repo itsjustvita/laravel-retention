@@ -245,6 +245,7 @@ it('exports the report as an array', function () {
                 'scheduled_for' => '2034-01-01T00:00:00+01:00',
                 'waits_for_dependents' => false,
                 'erasure_ground' => 'Art. 17 (3) (b) GDPR; § 35 (3) BDSG',
+                'erasure_reason' => 'legal_duty',
             ]],
         ]);
 });
@@ -265,17 +266,29 @@ it('renders a reply for the data subject in English and German', function () {
         ## Customer invoices
 
         - Deleted: 1 record.
-        - Restricted: 2 records. We must keep this data until 2034-01-01 (Art. 17 (3) (b) GDPR; § 35 (3) BDSG). Until then it is blocked for any other use; afterwards it will be deleted.
+        - Restricted: 2 records. We are legally required to keep this data until 2034-01-01 (Art. 17 (3) (b) GDPR; § 35 (3) BDSG). Until then it is blocked for any other use; afterwards it will be deleted.
 
         ## Customer master data
 
-        - Restricted: 1 record. We must keep this data until 2029-01-01 (Art. 17 (3) (e) GDPR). Until then it is blocked for any other use; afterwards it will be anonymised.
+        - Restricted: 1 record. We keep this data until 2029-01-01 to establish, exercise or defend legal claims (Art. 17 (3) (e) GDPR). Until then it is blocked for any other use; afterwards it will be anonymised.
 
         MD)
         ->and($report->toMarkdown('de'))->toContain('# Ergebnis des Löschantrags')
         ->and($report->toMarkdown('de'))->toContain('Bearbeitet am 01.03.2026.')
         ->and($report->toMarkdown('de'))->toContain('- Gelöscht: 1 Datensatz.')
-        ->and($report->toMarkdown('de'))->toContain('- Eingeschränkt: 2 Datensätze. Wir müssen diese Daten bis zum 01.01.2034 aufbewahren (Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG). Bis dahin sind sie für jede andere Verarbeitung gesperrt; danach werden sie gelöscht.');
+        ->and($report->toMarkdown('de'))->toContain('- Eingeschränkt: 2 Datensätze. Wir sind gesetzlich verpflichtet, diese Daten bis zum 01.01.2034 aufzubewahren (Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG). Bis dahin sind sie für jede andere Verarbeitung gesperrt; danach werden sie gelöscht.')
+        ->and($report->toMarkdown('de'))->toContain('- Eingeschränkt: 1 Datensatz. Wir bewahren diese Daten bis zum 01.01.2029 auf, um Rechtsansprüche geltend zu machen, auszuüben oder zu verteidigen (Art. 17 Abs. 3 lit. e DSGVO).')
+        ->and($report->toMarkdown('de'))->not->toContain('Wir müssen');
+});
+
+it('claims no specific reason for a rule that does not state one', function () {
+    config(['retention.rules' => ['bgb_limitation_period' => ['erasure_reason' => null]]]);
+    $customer = createCustomer(['contract_ended_at' => '2025-06-01 10:00:00']);
+
+    $report = Erasure::for($customer)->execute();
+
+    expect($report->toMarkdown('en'))->toContain('- Restricted: 1 record. We keep this data until 2029-01-01 (Art. 17 (3) (e) GDPR).')
+        ->and($report->toMarkdown('de'))->toContain('- Eingeschränkt: 1 Datensatz. Wir bewahren diese Daten bis zum 01.01.2029 auf (Art. 17 Abs. 3 lit. e DSGVO).');
 });
 
 it('marks a dry run in the reply', function () {

@@ -7,17 +7,19 @@ return [
         'label' => 'Buchungsbelege (z. B. Rechnungen)',
         'legal_basis' => '§ 147 Abs. 1 Nr. 4, Abs. 3, 4 AO; § 257 Abs. 1 Nr. 4, Abs. 4, 5 HGB; § 14b Abs. 1 UStG',
         'erasure_ground' => 'Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG',
-        'note' => 'Durch das Bürokratieentlastungsgesetz IV (BEG IV) von 10 auf 8 Jahre verkürzt, für alle Belege, deren Frist am 01.01.2025 noch nicht abgelaufen war. Bestimmte beaufsichtigte Institute (z. B. nach KWG, VAG oder WpIG) haben einen späteren Stichtag und müssen valid_from überschreiben.',
+        'note' => 'Durch das Bürokratieentlastungsgesetz IV (BEG IV) von 10 auf 8 Jahre verkürzt, für alle Belege, deren Frist bis einschließlich 31.12.2024 noch nicht abgelaufen war. Institute nach dem KWG, Versicherungen nach dem VAG und Wertpapierinstitute nach dem WpIG behalten 10 Jahre (Art. 97 § 19a Abs. 3 EGAO; § 257 Abs. 4 HGB) und müssen diese Regel überschreiben. Die Frist läuft nicht ab, solange die Unterlagen für Steuern von Bedeutung sind, deren Festsetzungsfrist noch nicht abgelaufen ist (§ 147 Abs. 3 AO). Die automatische Löschung erkennt das nicht; in solchen Fällen ist eine Aufbewahrungsanordnung anzulegen.',
     ],
     'ao_books_financial_statements' => [
         'label' => 'Bücher, Aufzeichnungen, Inventare und Jahresabschlüsse',
         'legal_basis' => '§ 147 Abs. 1 Nr. 1, Abs. 3, 4 AO; § 257 Abs. 1 Nr. 1, Abs. 4, 5 HGB',
         'erasure_ground' => 'Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG',
+        'note' => 'Die Frist läuft nicht ab, solange die Unterlagen für Steuern von Bedeutung sind, deren Festsetzungsfrist noch nicht abgelaufen ist (§ 147 Abs. 3 AO). Die automatische Löschung erkennt das nicht; in solchen Fällen ist eine Aufbewahrungsanordnung anzulegen.',
     ],
     'ao_business_correspondence' => [
         'label' => 'Geschäftsbriefe und sonstige steuerlich relevante Unterlagen',
         'legal_basis' => '§ 147 Abs. 1 Nr. 2, 3, 5, Abs. 3, 4 AO; § 257 Abs. 1 Nr. 2, 3, Abs. 4, 5 HGB',
         'erasure_ground' => 'Art. 17 Abs. 3 lit. b DSGVO; § 35 Abs. 3 BDSG',
+        'note' => 'Die Frist läuft nicht ab, solange die Unterlagen für Steuern von Bedeutung sind, deren Festsetzungsfrist noch nicht abgelaufen ist (§ 147 Abs. 3 AO). Die automatische Löschung erkennt das nicht; in solchen Fällen ist eine Aufbewahrungsanordnung anzulegen.',
     ],
     'bgb_limitation_period' => [
         'label' => 'Vertragsdaten nach Vertragsende',

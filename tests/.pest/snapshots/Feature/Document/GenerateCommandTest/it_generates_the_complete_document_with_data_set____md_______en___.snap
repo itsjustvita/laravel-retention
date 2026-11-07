@@ -64,7 +64,7 @@ Deletion classes combine the period with the event that starts it.
 - **Responsible unit:** Accounting
 - **Earlier versions:** Until 2025-01-01: 10 years
 - Legal holds inherited from: customer, order
-- **Note:** Reduced from 10 to 8 years by the Fourth Bureaucracy Relief Act (Bürokratieentlastungsgesetz IV, BEG IV) for all vouchers whose period had not expired by 2025-01-01. Certain supervised institutions (e.g. under KWG, VAG or WpIG) have a later transition date and must override valid_from.
+- **Note:** Reduced from 10 to 8 years by the Fourth Bureaucracy Relief Act (Bürokratieentlastungsgesetz IV, BEG IV) for all vouchers whose period had not expired by 2024-12-31. Institutions under the KWG, insurers under the VAG and securities institutions under the WpIG keep 10 years (Art. 97 § 19a (3) EGAO; § 257 (4) HGB) and must override this rule. The period does not expire while the records matter for taxes whose assessment period is still open (§ 147 (3) AO). The automatic deletion does not detect this; place a legal hold in such cases.
 
 ### Orders
 

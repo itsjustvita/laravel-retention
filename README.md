@@ -130,8 +130,13 @@ The catalogue ships with the package, so corrections reach you with an update an
 
 ```php
 'rules' => [
-    // A supervised institution with a later BEG IV transition date:
-    'ao_accounting_voucher' => ['valid_from' => '2026-01-01'],
+    // Institutions under the KWG, VAG or WpIG keep 10 years for vouchers:
+    'ao_accounting_voucher' => [
+        'period' => 'P10Y',
+        'valid_from' => null,
+        'previous' => null,
+        'note' => 'Institution under the KWG: Art. 97 § 19a (3) EGAO.',
+    ],
 
     'newsletter_tracking' => [
         'label' => 'Newsletter tracking data',
@@ -139,14 +144,19 @@ The catalogue ships with the package, so corrections reach you with an update an
         'counting' => 'event',              // event | end_of_year
         'legal_basis' => 'Art. 6 (1) (a) GDPR',
         'type' => 'custom',                 // legal | recommendation | custom
-        'blocks_erasure' => false,          // true also needs erasure_ground
+        'blocks_erasure' => false,          // true also needs erasure_ground; erasure_reason is optional
     ],
 ],
 ```
 
 **How periods are counted.** With `end_of_year`, an invoice dated 2025-03-15 with 8 years is deletable from 2034-01-01. With `event`, date-based periods follow §§ 187, 188 BGB: a rejection on 2025-03-15 with 6 months is deletable from 2025-09-16. Time-based periods like `PT72H` are exact. All calendar calculations use `RETENTION_TIMEZONE` (default: the application timezone).
 
-**When a rule changes** (`valid_from`, `previous`), the rule in force on the evaluation date applies to every record that had not already expired under the previous version. This matches BEG IV: on 2025-01-01, vouchers from 2015 and 2016 became deletable at once.
+**When a rule changes** (`valid_from`, `previous`), the rule in force on the evaluation date applies to every record that had not already expired under the previous version. This matches BEG IV: on 2025-01-01, vouchers from 2015 and 2016 became deletable at once. Institutions under the KWG, insurers under the VAG and securities institutions under the WpIG are excepted and keep 10 years for vouchers (Art. 97 § 19a (3) EGAO, § 257 (4) HGB), so they have to override the rule as shown above.
+
+> [!WARNING]
+> **Tax records can stay longer than their period.** Under § 147 (3) AO, the period does not expire while the records matter for taxes whose assessment period is still open. `retention:run` cannot detect this and deletes when the period ends. Agree on a process with your tax adviser and place a [legal hold](#legal-hold) on records that are affected.
+
+**Why a rule keeps data.** `erasure_reason` decides the wording of the reply to a data subject: `legal_duty` ("we are legally required to keep"), `legal_claims` ("to establish, exercise or defend legal claims"), or none for a neutral sentence.
 
 ## Policies
 
@@ -335,6 +345,7 @@ Deletion classes combine the period with the event that starts it.
 
 ## Known limitations
 
+- **No tax assessment data.** The package cannot tell whether a tax assessment period is still open (§ 147 (3) AO); use legal holds for that.
 - **Only the application's database.** Backups, external services, mailboxes and files are not covered. Files only go away if you remove them in a model event. Deleted data stays in backups until they rotate; after restoring a backup, run `retention:run` again before using the data.
 - **Unique indexes.** Restricted rows still count against them, e.g. a returning customer who signs up again with the same email address.
 - **Primary keys.** The published `retention_holds` migration uses `morphs()`. Change it to `uuidMorphs()` or `ulidMorphs()` if your models use these keys.

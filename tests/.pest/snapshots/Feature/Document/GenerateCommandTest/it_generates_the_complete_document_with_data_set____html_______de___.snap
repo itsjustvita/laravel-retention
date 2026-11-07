@@ -163,7 +163,7 @@
 <li><strong>Verantwortliche Stelle:</strong> Accounting</li>
 <li><strong>Frühere Fassungen:</strong> Bis 01.01.2025: 10 Jahre</li>
 <li>Aufbewahrungsanordnungen geerbt von: customer, order</li>
-<li><strong>Hinweis:</strong> Durch das Bürokratieentlastungsgesetz IV (BEG IV) von 10 auf 8 Jahre verkürzt, für alle Belege, deren Frist am 01.01.2025 noch nicht abgelaufen war. Bestimmte beaufsichtigte Institute (z. B. nach KWG, VAG oder WpIG) haben einen späteren Stichtag und müssen valid_from überschreiben.</li>
+<li><strong>Hinweis:</strong> Durch das Bürokratieentlastungsgesetz IV (BEG IV) von 10 auf 8 Jahre verkürzt, für alle Belege, deren Frist bis einschließlich 31.12.2024 noch nicht abgelaufen war. Institute nach dem KWG, Versicherungen nach dem VAG und Wertpapierinstitute nach dem WpIG behalten 10 Jahre (Art. 97 § 19a Abs. 3 EGAO; § 257 Abs. 4 HGB) und müssen diese Regel überschreiben. Die Frist läuft nicht ab, solange die Unterlagen für Steuern von Bedeutung sind, deren Festsetzungsfrist noch nicht abgelaufen ist (§ 147 Abs. 3 AO). Die automatische Löschung erkennt das nicht; in solchen Fällen ist eine Aufbewahrungsanordnung anzulegen.</li>
 </ul>
 <h3>Orders</h3>
 <ul>

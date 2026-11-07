@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use ItsJustVita\Retention\Enums\Counting;
+use ItsJustVita\Retention\Enums\ErasureReason;
 use ItsJustVita\Retention\Enums\RuleType;
 use ItsJustVita\Retention\Exceptions\InvalidRuleDefinition;
 use ItsJustVita\Retention\Rules\RetentionRule;
@@ -16,6 +17,7 @@ it('builds a rule from a definition', function () {
         'type' => 'legal',
         'blocks_erasure' => true,
         'erasure_ground' => 'Art. 17 (3) (b) GDPR',
+        'erasure_reason' => 'legal_duty',
         'valid_from' => '2025-01-01',
         'previous' => ['period' => 'P10Y'],
         'note' => 'BEG IV',
@@ -30,6 +32,7 @@ it('builds a rule from a definition', function () {
         ->and($rule->type)->toBe(RuleType::Legal)
         ->and($rule->blocksErasure)->toBeTrue()
         ->and($rule->erasureGround)->toBe('Art. 17 (3) (b) GDPR')
+        ->and($rule->erasureReason)->toBe(ErasureReason::LegalDuty)
         ->and($rule->validFrom)->toBe('2025-01-01')
         ->and($rule->note)->toBe('BEG IV')
         ->and($rule->asOf)->toBe('2026-11-07');
@@ -39,6 +42,7 @@ it('leaves optional fields empty', function () {
     $rule = makeRule('P7D');
 
     expect($rule->erasureGround)->toBeNull()
+        ->and($rule->erasureReason)->toBeNull()
         ->and($rule->validFrom)->toBeNull()
         ->and($rule->previous)->toBeNull()
         ->and($rule->note)->toBeNull()
@@ -90,6 +94,7 @@ it('rejects invalid definitions', function (array $overrides, string $message) {
     'non-date valid_from' => [['valid_from' => '01.01.2025'], '[valid_from] must be a date in the format YYYY-MM-DD'],
     'impossible valid_from' => [['valid_from' => '2025-02-30'], '[valid_from] must be a date in the format YYYY-MM-DD'],
     'non-date as_of' => [['as_of' => 'today'], '[as_of] must be a date in the format YYYY-MM-DD'],
+    'invalid erasure reason' => [['erasure_reason' => 'because'], '[erasure_reason] must be one of [legal_duty, legal_claims]'],
     'non-string note' => [['note' => 123], '[note] must be a string'],
     'previous without valid_from' => [['previous' => ['period' => 'P10Y']], '[previous] requires [valid_from]'],
     'previous not an array' => [['valid_from' => '2025-01-01', 'previous' => 'P10Y'], '[previous] must be an array'],

@@ -7,6 +7,7 @@ namespace ItsJustVita\Retention\Rules;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use ItsJustVita\Retention\Enums\Counting;
+use ItsJustVita\Retention\Enums\ErasureReason;
 use ItsJustVita\Retention\Enums\RuleType;
 use ItsJustVita\Retention\Exceptions\InvalidRuleDefinition;
 
@@ -27,6 +28,7 @@ final readonly class RetentionRule
         'type',
         'blocks_erasure',
         'erasure_ground',
+        'erasure_reason',
         'valid_from',
         'previous',
         'note',
@@ -50,6 +52,7 @@ final readonly class RetentionRule
         public ?self $previous = null,
         public ?string $note = null,
         public ?string $asOf = null,
+        public ?ErasureReason $erasureReason = null,
     ) {
         if ($blocksErasure && $erasureGround === null) {
             throw InvalidRuleDefinition::for($key, '[erasure_ground] is required when [blocks_erasure] is true.');
@@ -97,6 +100,7 @@ final readonly class RetentionRule
             previous: self::previous($key, $definition),
             note: self::optionalString($key, $definition, 'note'),
             asOf: self::date($key, $definition, 'as_of'),
+            erasureReason: self::erasureReason($key, $definition),
         );
     }
 
@@ -204,6 +208,21 @@ final readonly class RetentionRule
 
         return (is_string($value) ? RuleType::tryFrom($value) : null)
             ?? throw InvalidRuleDefinition::for($key, '[type] must be one of ['.self::values(RuleType::cases()).'].');
+    }
+
+    /**
+     * @param  array<mixed>  $definition
+     */
+    private static function erasureReason(string $key, array $definition): ?ErasureReason
+    {
+        $value = $definition['erasure_reason'] ?? null;
+
+        if ($value === null) {
+            return null;
+        }
+
+        return (is_string($value) ? ErasureReason::tryFrom($value) : null)
+            ?? throw InvalidRuleDefinition::for($key, '[erasure_reason] must be one of ['.self::values(ErasureReason::cases()).'].');
     }
 
     /**

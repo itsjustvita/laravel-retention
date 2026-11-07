@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use ItsJustVita\Retention\Calculation\RetentionCalculator;
 use ItsJustVita\Retention\Enums\Counting;
+use ItsJustVita\Retention\Enums\ErasureReason;
 use ItsJustVita\Retention\Enums\RuleType;
 use ItsJustVita\Retention\Exceptions\InvalidRuleDefinition;
 use ItsJustVita\Retention\Exceptions\UnknownRule;
@@ -66,7 +68,7 @@ it('merges config overrides into the shipped rule', function () {
         ->and($rule->legalBasis)->toBe(ShippedRules::definitions()['server_logs']['legal_basis']);
 });
 
-it('lets supervised institutions move the BEG IV transition date', function () {
+it('lets an application move a transition date', function () {
     config(['retention.rules' => ['ao_accounting_voucher' => ['valid_from' => '2026-01-01']]]);
 
     $rule = app(RuleCatalogue::class)->get('ao_accounting_voucher');
@@ -74,6 +76,47 @@ it('lets supervised institutions move the BEG IV transition date', function () {
     expect($rule->validFrom)->toBe('2026-01-01')
         ->and($rule->previous?->period->iso)->toBe('P10Y');
 });
+
+it('keeps ten years for supervised institutions through an override', function () {
+    config(['retention.rules' => ['ao_accounting_voucher' => [
+        'period' => 'P10Y',
+        'valid_from' => null,
+        'previous' => null,
+        'note' => 'Institution under the KWG: ten years.',
+    ]]]);
+
+    $rule = app(RuleCatalogue::class)->get('ao_accounting_voucher');
+    $calculator = new RetentionCalculator('Europe/Berlin');
+
+    expect($rule->period->iso)->toBe('P10Y')
+        ->and($rule->previous)->toBeNull()
+        ->and($calculator->isDue(at('2015-06-01'), $rule, at('2025-12-31')))->toBeFalse()
+        ->and($calculator->isDue(at('2015-06-01'), $rule, at('2026-01-01')))->toBeTrue();
+});
+
+it('names the exception for institutions in the note on accounting vouchers', function () {
+    expect(app(RuleCatalogue::class)->get('ao_accounting_voucher')->note)
+        ->toContain('Art. 97 § 19a (3) EGAO')
+        ->toContain('§ 257 (4) HGB')
+        ->not->toContain('later transition date');
+});
+
+it('warns about the suspension of expiry on every rule from the AO', function (string $key) {
+    expect(app(RuleCatalogue::class)->get($key)->note)->toContain('§ 147 (3) AO');
+})->with(['ao_accounting_voucher', 'ao_books_financial_statements', 'ao_business_correspondence']);
+
+it('states why a shipped rule blocks erasure', function (string $key, ?ErasureReason $reason) {
+    expect(app(RuleCatalogue::class)->get($key)->erasureReason)->toBe($reason);
+})->with([
+    'ao_accounting_voucher' => ['ao_accounting_voucher', ErasureReason::LegalDuty],
+    'ao_books_financial_statements' => ['ao_books_financial_statements', ErasureReason::LegalDuty],
+    'ao_business_correspondence' => ['ao_business_correspondence', ErasureReason::LegalDuty],
+    'uwg_telephone_advertising_consent' => ['uwg_telephone_advertising_consent', ErasureReason::LegalDuty],
+    'bgb_limitation_period' => ['bgb_limitation_period', ErasureReason::LegalClaims],
+    'rejected_application' => ['rejected_application', ErasureReason::LegalClaims],
+    'consent_proof' => ['consent_proof', ErasureReason::LegalClaims],
+    'server_logs' => ['server_logs', null],
+]);
 
 it('removes a shipped transition when overridden with null', function () {
     config(['retention.rules' => ['ao_accounting_voucher' => ['valid_from' => null, 'previous' => null]]]);

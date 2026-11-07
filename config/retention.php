@@ -174,8 +174,13 @@ return [
     | and must be reviewed by the controller.
     |
     | 'rules' => [
-    |     // Supervised institution with a later BEG IV transition date:
-    |     'ao_accounting_voucher' => ['valid_from' => '2026-01-01'],
+    |     // Institutions under the KWG, VAG or WpIG keep 10 years for vouchers:
+    |     'ao_accounting_voucher' => [
+    |         'period' => 'P10Y',
+    |         'valid_from' => null,
+    |         'previous' => null,
+    |         'note' => 'Institution under the KWG: Art. 97 § 19a (3) EGAO.',
+    |     ],
     |
     |     // Custom rule:
     |     'newsletter_tracking' => [

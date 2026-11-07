@@ -7,6 +7,7 @@ namespace ItsJustVita\Retention\Erasure;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Eloquent\Model;
+use ItsJustVita\Retention\Enums\ErasureReason;
 use ItsJustVita\Retention\Enums\ErasureStatus;
 use ItsJustVita\Retention\Rules\RuleText;
 
@@ -54,7 +55,7 @@ final readonly class ErasureReport
      *     subject: array{model: class-string<Model>, key: int|string},
      *     processed_at: string,
      *     dry_run: bool,
-     *     categories: array<string, array{label: string, records: list<array{model: class-string<Model>, key: int|string, status: string, final_action: string|null, scheduled_for: string|null, waits_for_dependents: bool, erasure_ground: string|null}>}>
+     *     categories: array<string, array{label: string, records: list<array{model: class-string<Model>, key: int|string, status: string, final_action: string|null, scheduled_for: string|null, waits_for_dependents: bool, erasure_ground: string|null, erasure_reason: string|null}>}>
      * }
      */
     public function toArray(): array
@@ -72,6 +73,7 @@ final readonly class ErasureReport
                 'scheduled_for' => $entry->scheduledFor?->toIso8601String(),
                 'waits_for_dependents' => $entry->waitsForDependents,
                 'erasure_ground' => $entry->erasureGround,
+                'erasure_reason' => $entry->erasureReason?->value,
             ];
         }
 
@@ -136,6 +138,7 @@ final readonly class ErasureReport
                 $entry->scheduledFor?->format('Y-m-d') ?? '',
                 $entry->waitsForDependents ? 'dependents' : '',
                 $entry->erasureGround ?? '',
+                $entry->erasureReason->value ?? '',
                 $entry->finalAction->value ?? '',
             ])][] = $entry;
         }
@@ -164,7 +167,13 @@ final readonly class ErasureReport
             return $t('status.restricted_dependent', ['records' => $records, 'action' => $action]);
         }
 
-        return $t('status.restricted', [
+        $text = match ($entry->erasureReason) {
+            ErasureReason::LegalDuty => 'status.restricted_legal_duty',
+            ErasureReason::LegalClaims => 'status.restricted_legal_claims',
+            null => 'status.restricted',
+        };
+
+        return $t($text, [
             'records' => $records,
             'date' => $entry->scheduledFor->format($dateFormat),
             'ground' => (string) ($entry->ruleKey === null
