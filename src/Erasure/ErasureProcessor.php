@@ -7,8 +7,6 @@ namespace ItsJustVita\Retention\Erasure;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
-use InvalidArgumentException;
 use ItsJustVita\Retention\Actions\ActionExecutor;
 use ItsJustVita\Retention\Calculation\RetentionCalculator;
 use ItsJustVita\Retention\Concerns\Restrictable;
@@ -26,6 +24,7 @@ use ItsJustVita\Retention\Policies\PolicyValidator;
 use ItsJustVita\Retention\RetentionPolicy;
 use ItsJustVita\Retention\Rules\RetentionRule;
 use ItsJustVita\Retention\Rules\RuleCatalogue;
+use ItsJustVita\Retention\Support\RelationResolver;
 use LogicException;
 
 /**
@@ -176,7 +175,7 @@ final readonly class ErasureProcessor
     private function hasRemainingDependents(Model $record, RetentionPolicy $policy, array $deleted): bool
     {
         foreach ($policy->blockingRelations as $name) {
-            foreach ($this->relation($record, $name)->withoutGlobalScopes()->get() as $dependent) {
+            foreach (RelationResolver::resolve($record, $name)->withoutGlobalScopes()->get() as $dependent) {
                 if (! isset($deleted[$this->identity($dependent)])) {
                     return true;
                 }
@@ -213,7 +212,7 @@ final readonly class ErasureProcessor
 
         $visit = function (Model $record, array $tree) use (&$visit, &$ordered, &$seen): void {
             foreach ($tree as $name => $children) {
-                foreach ($this->relation($record, (string) $name)->withoutGlobalScopes()->get() as $related) {
+                foreach (RelationResolver::resolve($record, (string) $name)->withoutGlobalScopes()->get() as $related) {
                     $visit($related, is_array($children) ? $children : []);
                 }
             }
@@ -250,20 +249,6 @@ final readonly class ErasureProcessor
         }
 
         return $tree;
-    }
-
-    /**
-     * @return Relation<Model, Model, mixed>
-     */
-    private function relation(Model $record, string $name): Relation
-    {
-        $relation = method_exists($record, $name) ? $record->{$name}() : null;
-
-        if (! $relation instanceof Relation) {
-            throw new InvalidArgumentException('Erasure: ['.$record::class."] has no relation [{$name}].");
-        }
-
-        return $relation;
     }
 
     private function rule(RetentionPolicy $policy): RetentionRule

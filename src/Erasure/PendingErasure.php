@@ -24,6 +24,10 @@ final class PendingErasure
     /**
      * Related records to erase as well; dot notation for nested relations.
      *
+     * Names must come from code, never from user input: a method without a
+     * return type is run once on a blank instance to find out whether it is a
+     * relation.
+     *
      * @param  list<string>|string  $relations
      */
     public function including(array|string $relations): self

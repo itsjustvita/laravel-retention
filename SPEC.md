@@ -248,6 +248,8 @@ Decision per record; the first matching row applies:
 
 The returned `ErasureReport` lists per data category what was deleted, anonymised, restricted (with the date of the final action and the erasure ground), held, or left pending, and is directly usable for replying to the data subject: `toArray()` and `toMarkdown($locale)`. The Markdown reply lists counts, dates and legal grounds, never record keys; its texts are translation files (en and de shipped, publishable with `--tag=retention-translations`). The date shown for restricted records is computed with the rule in force when the report is created; if the rule changes later, the actual action follows the new rule.
 
+Relation names in `including()` must come from code, never from user input. They are checked without running arbitrary methods on real records: names of the base model and methods whose signature rules out a relation are rejected, and a method without a conclusive return type is tried only on a blank, unsaved instance (`RelationResolver`). So `including(['delete'])` fails without deleting anything.
+
 All records are processed in one transaction, so a failing action rolls the whole request back. `dryRun()` predicts exactly what `execute()` would do without changing anything: it keeps track of the records it would delete, so a parent whose dependents would all be deleted is predicted as deleted. With `onErasureBeforeStart('apply')`, a record without start event skips row 3 of the table and continues with rows 4 and 5. `blockedBy()` requires the `Restrictable` trait, because row 4 restricts the record.
 
 ## Legal hold

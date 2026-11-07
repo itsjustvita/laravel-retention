@@ -6,7 +6,6 @@ namespace ItsJustVita\Retention\Policies;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use ItsJustVita\Retention\Concerns\Restrictable;
 use ItsJustVita\Retention\Database\RetentionColumns;
 use ItsJustVita\Retention\Enums\Action;
@@ -21,6 +20,7 @@ use ItsJustVita\Retention\Models\RetentionLog;
 use ItsJustVita\Retention\RetentionPolicy;
 use ItsJustVita\Retention\Rules\RetentionRule;
 use ItsJustVita\Retention\Rules\RuleCatalogue;
+use ItsJustVita\Retention\Support\RelationResolver;
 use Throwable;
 
 /**
@@ -209,8 +209,7 @@ final readonly class PolicyValidator
                 return $violation;
             }
 
-            $relation = $current->{$segment}();
-            $current = $relation instanceof Relation ? $relation->getRelated() : $current;
+            $current = RelationResolver::resolve($current, $segment)->getRelated();
         }
 
         return $this->policies->has($current::class)
@@ -248,17 +247,7 @@ final readonly class PolicyValidator
 
     private function relationViolation(Model $model, string $relation): ?string
     {
-        if (! method_exists($model, $relation)) {
-            return "relation [{$relation}] does not exist on the model.";
-        }
-
-        try {
-            $result = $model->{$relation}();
-        } catch (Throwable $e) {
-            return "relation [{$relation}] could not be resolved: {$e->getMessage()}";
-        }
-
-        return $result instanceof Relation ? null : "[{$relation}] is not an Eloquent relation.";
+        return RelationResolver::violation($model, $relation);
     }
 
     /**
@@ -394,16 +383,8 @@ final readonly class PolicyValidator
      */
     private function relatedModel(Model $model, string $relation): ?string
     {
-        if (! method_exists($model, $relation)) {
-            return null;
-        }
-
-        try {
-            $result = $model->{$relation}();
-        } catch (Throwable) {
-            return null;
-        }
-
-        return $result instanceof Relation ? $result->getRelated()::class : null;
+        return RelationResolver::violation($model, $relation) === null
+            ? RelationResolver::resolve($model, $relation)->getRelated()::class
+            : null;
     }
 }

@@ -6,11 +6,10 @@ namespace ItsJustVita\Retention\Actions;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use ItsJustVita\Retention\Exceptions\InvalidRetentionPolicy;
 use ItsJustVita\Retention\Policies\PolicyRegistry;
 use ItsJustVita\Retention\RetentionPolicy;
-use LogicException;
+use ItsJustVita\Retention\Support\RelationResolver;
 
 /**
  * Dependencies between models declared with blockedBy(): a record may only
@@ -26,7 +25,7 @@ final readonly class Dependencies
     public function blocksDeletion(Model $record, RetentionPolicy $policy): bool
     {
         foreach ($policy->blockingRelations as $relation) {
-            if ($this->relation($record, $relation)->withoutGlobalScopes()->exists()) {
+            if (RelationResolver::resolve($record, $relation)->withoutGlobalScopes()->exists()) {
                 return true;
             }
         }
@@ -103,22 +102,8 @@ final readonly class Dependencies
         $instance = new $model;
 
         return array_map(
-            fn (string $relation): string => $this->relation($instance, $relation)->getRelated()::class,
+            fn (string $relation): string => RelationResolver::resolve($instance, $relation)->getRelated()::class,
             $this->policies->for($model)->blockingRelations,
         );
-    }
-
-    /**
-     * @return Relation<Model, Model, mixed>
-     */
-    private function relation(Model $model, string $name): Relation
-    {
-        $relation = method_exists($model, $name) ? $model->{$name}() : null;
-
-        if (! $relation instanceof Relation) {
-            throw new LogicException('blockedBy() relation ['.$name.'] on ['.$model::class.'] is not an Eloquent relation.');
-        }
-
-        return $relation;
     }
 }
