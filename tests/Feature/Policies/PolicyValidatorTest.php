@@ -72,6 +72,11 @@ it('reports invalid policies', function (Closure $adjust, string $table, string 
         'customers',
         'start column [signed_at] does not exist on table [customers].',
     ],
+    'start column of an unsupported type' => [
+        fn (RetentionPolicy $p) => $p->startsAt('name', StartEvent::Collection),
+        'customers',
+        'start column [name] has type [varchar]; expected a date, datetime/timestamp or integer (Unix timestamp) column.',
+    ],
     'anonymize without anonymizer' => [
         fn (RetentionPolicy $p) => $p->action('anonymize'),
         'customers',
@@ -153,6 +158,13 @@ it('reports errors thrown while building the policy', function () {
 
     expect(app(PolicyValidator::class)->violations($model))
         ->toBe(['Invalid retention policy for [probe]: unknown action [remove]; expected one of [delete, anonymize].']);
+});
+
+it('reports exceptions thrown by retentionPolicy()', function () {
+    PolicyProbe::$policy = null; // retentionPolicy() throws a LogicException
+
+    expect(app(PolicyValidator::class)->violations(PolicyProbe::class))
+        ->toBe(['retentionPolicy() threw LogicException: No probe policy set.']);
 });
 
 it('reports models without a policy', function () {

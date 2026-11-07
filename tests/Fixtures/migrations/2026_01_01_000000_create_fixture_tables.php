@@ -46,4 +46,12 @@ return new class extends Migration
             $table->timestamp('logged_at');
         });
     }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('server_logs');
+        Schema::dropIfExists('invoices');
+        Schema::dropIfExists('orders');
+        Schema::dropIfExists('customers');
+    }
 };

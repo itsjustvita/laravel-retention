@@ -6,8 +6,8 @@ on:
   pull_request:
 
 jobs:
-  tests:
-    name: PHP ${{ matrix.php }} – ${{ matrix.stability }}
+  sqlite:
+    name: PHP ${{ matrix.php }} – ${{ matrix.stability }} – SQLite
     runs-on: ubuntu-latest
 
     strategy:
@@ -29,6 +29,76 @@ jobs:
 
       - name: Install dependencies
         run: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress
+
+      - name: Run tests
+        run: vendor/bin/pest --ci
+
+  databases:
+    name: PHP 8.4 – ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: MySQL 8.4
+            connection: mysql
+            image: mysql:8.4
+            port: 3306
+            username: root
+            health: mysqladmin ping -h 127.0.0.1 -psecret
+          - name: MariaDB 11.4
+            connection: mariadb
+            image: mariadb:11.4
+            port: 3306
+            username: root
+            health: healthcheck.sh --connect --innodb_initialized
+          - name: PostgreSQL 18
+            connection: pgsql
+            image: postgres:18
+            port: 5432
+            username: postgres
+            health: pg_isready -U postgres
+
+    services:
+      database:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: retention
+          MARIADB_ROOT_PASSWORD: secret
+          MARIADB_DATABASE: retention
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: retention
+        ports:
+          - ${{ matrix.port }}:${{ matrix.port }}
+        options: >-
+          --health-cmd "${{ matrix.health }}"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DB_CONNECTION: ${{ matrix.connection }}
+      DB_HOST: 127.0.0.1
+      DB_PORT: ${{ matrix.port }}
+      DB_DATABASE: retention
+      DB_USERNAME: ${{ matrix.username }}
+      DB_PASSWORD: secret
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_mysql, pdo_pgsql, intl
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
 
       - name: Run tests
         run: vendor/bin/pest --ci

@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+afterEach(fn () => Schema::dropIfExists('macro_test'));
+
 it('adds nullable, indexed retention columns', function (string $macro, string $column) {
     Schema::create('macro_test', function (Blueprint $table) use ($macro) {
         $table->id();

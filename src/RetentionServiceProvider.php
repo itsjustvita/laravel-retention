@@ -9,7 +9,10 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use ItsJustVita\Retention\Calculation\RetentionCalculator;
+use ItsJustVita\Retention\Console\DueCommand;
+use ItsJustVita\Retention\Console\RunCommand;
 use ItsJustVita\Retention\Database\RetentionColumns;
+use ItsJustVita\Retention\Execution\StartColumn;
 use ItsJustVita\Retention\Policies\PolicyRegistry;
 use ItsJustVita\Retention\Policies\PolicyValidator;
 use ItsJustVita\Retention\Rules\RuleCatalogue;
@@ -48,6 +51,7 @@ class RetentionServiceProvider extends ServiceProvider
 
         $this->app->singleton(PolicyRegistry::class);
         $this->app->singleton(PolicyValidator::class);
+        $this->app->singleton(StartColumn::class);
     }
 
     public function boot(): void
@@ -58,6 +62,11 @@ class RetentionServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/retention.php' => config_path('retention.php'),
             ], 'retention-config');
+
+            $this->commands([
+                RunCommand::class,
+                DueCommand::class,
+            ]);
         }
     }
 }

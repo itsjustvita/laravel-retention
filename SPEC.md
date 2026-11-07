@@ -262,9 +262,13 @@ Holds contain personal data of employees (`created_by`, possibly `reason`). Rele
 
 Artisan commands:
 
-`retention:run` validates all policies, then executes all due final actions. Due records are selected in SQL via `dueConstraint()`; records on hold, already anonymised, or blocked by `blockedBy()` are excluded; restricted and soft-deleted records are included. Processes in chunks (`lazyById`), one transaction per chunk, models in dependency order, with `--model=` to narrow scope and `--dry-run`. Meant for the scheduler; the package does not register itself, the README shows the line for `routes/console.php`.
+`retention:run` validates all policies, then executes all due final actions. If any policy is invalid it lists every violation, changes nothing and exits non-zero. Due records are selected in SQL via `dueConstraint()`; records on hold, already anonymised, or blocked by `blockedBy()` are excluded. The selection ignores all global scopes, because retention applies to every row of a table: restricted, soft-deleted and otherwise scoped-out records are included. Every selected record is checked once more in PHP (`isDue()`); a record that fails this check is left untouched and reported as skipped with a warning, so a mismatch between SQL and PHP can never delete too early. Processes in chunks (`chunkById`, size `retention.chunk_size`, default 500, or `--chunk=`), one transaction per chunk, models in dependency order, all against the same evaluation time, with `--model=` (class name or basename, repeatable) to narrow scope and `--dry-run` (shows due and blocked counts). Prints per model: deleted, anonymised, blocked, skipped. Meant for the scheduler; the package does not register itself, the README shows the line for `routes/console.php`.
 
-`retention:due` prints a table: data category, model or table, count due now, count due within 30 days, count restricted, count on hold.
+Models are discovered in `retention.models.paths` (default `app/Models`): every autoloadable, non-abstract Eloquent model; `retention.models.additional` lists models outside these paths. `retention:run` and `retention:due` process those with `HasRetention`.
+
+Start columns may be `date` (a calendar date in the retention timezone), `datetime`/`timestamp` (wall-clock time in the application timezone, as Laravel writes it), `timestamptz` (an instant) or an integer (Unix timestamp). The SQL condition may round towards selecting fewer records, never more.
+
+`retention:due` prints a table: data category, model or table, count due now, count due but blocked by `blockedBy()`, count becoming due within the next 30 days (`--days=`), count restricted, count on hold (once legal holds exist). It validates the policies first, like `retention:run`.
 
 `retention:audit` checks coverage on three levels and exits with a non-zero code on any error, so it can run in CI. This is a central feature because it stops new tables from shipping without a deletion rule.
 
@@ -339,6 +343,8 @@ High coverage is mandatory for:
 - Dependencies: processing order, `blockedBy()`, cycle detection.
 - `audit`: models, tables, table policies, foreign key checks, exit codes.
 - The generator: snapshot tests against a fixture set of models.
+
+The suite runs on SQLite (PHP 8.4 and 8.5, lowest and stable dependencies) and on MySQL 8.4, MariaDB 11.4 and PostgreSQL 18 in CI, since due records are selected in SQL.
 
 Plus one feature test that runs a full lifecycle with time travel: customer with invoices, contract end, erasure request, restriction of customer and invoices, anonymisation of the customer after the limitation period, deletion of the invoices after the retention period, log entries.
 

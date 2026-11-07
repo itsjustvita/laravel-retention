@@ -13,6 +13,8 @@ use ItsJustVita\Retention\Enums\Action;
 use ItsJustVita\Retention\Exceptions\InvalidRetentionPolicy;
 use ItsJustVita\Retention\Exceptions\MissingRetentionPolicy;
 use ItsJustVita\Retention\Exceptions\RetentionException;
+use ItsJustVita\Retention\Execution\StartColumn;
+use ItsJustVita\Retention\Execution\TemporalType;
 use ItsJustVita\Retention\RetentionPolicy;
 use ItsJustVita\Retention\Rules\RetentionRule;
 use ItsJustVita\Retention\Rules\RuleCatalogue;
@@ -31,6 +33,7 @@ final readonly class PolicyValidator
     public function __construct(
         private PolicyRegistry $policies,
         private RuleCatalogue $rules,
+        private StartColumn $startColumn,
     ) {}
 
     /**
@@ -56,8 +59,8 @@ final readonly class PolicyValidator
 
         try {
             $policy = $this->policies->for($model);
-        } catch (RetentionException $e) {
-            return [$e->getMessage()];
+        } catch (Throwable $e) {
+            return [$e instanceof RetentionException ? $e->getMessage() : 'retentionPolicy() threw '.$e::class.': '.$e->getMessage()];
         }
 
         $instance = new $model;
@@ -183,8 +186,12 @@ final readonly class PolicyValidator
         $columns = $schema->getColumnListing($table);
         $violations = [];
 
-        if ($policy->startColumn !== null && ! in_array($policy->startColumn, $columns, true)) {
-            $violations[] = "start column [{$policy->startColumn}] does not exist on table [{$table}].";
+        if ($policy->startColumn !== null) {
+            if (! in_array($policy->startColumn, $columns, true)) {
+                $violations[] = "start column [{$policy->startColumn}] does not exist on table [{$table}].";
+            } elseif (TemporalType::fromColumnType($type = $this->startColumn->columnTypeName($model, $policy->startColumn)) === null) {
+                $violations[] = "start column [{$policy->startColumn}] has type [{$type}]; expected a date, datetime/timestamp or integer (Unix timestamp) column.";
+            }
         }
 
         if ($policy->finalAction === Action::Anonymize && ! in_array(RetentionColumns::ANONYMIZED_AT, $columns, true)) {

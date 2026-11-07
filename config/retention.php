@@ -19,6 +19,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Models
+    |--------------------------------------------------------------------------
+    |
+    | Where to look for Eloquent models. retention:run and retention:due
+    | process every model with the HasRetention trait; retention:audit
+    | reports models without a policy. Models outside these paths (e.g.
+    | from packages) can be listed under `additional`.
+    |
+    */
+
+    'models' => [
+        'paths' => [app_path('Models')],
+        'additional' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chunk size
+    |--------------------------------------------------------------------------
+    |
+    | Records per chunk in retention:run. Each chunk runs in its own
+    | database transaction.
+    |
+    */
+
+    'chunk_size' => 500,
+
+    /*
+    |--------------------------------------------------------------------------
     | Rule catalogue
     |--------------------------------------------------------------------------
     |
